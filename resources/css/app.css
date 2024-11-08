@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Centralized Custom Styles */
+
+/* General Container Style */
+.container-standard {
+    @apply container mx-auto px-4;
+}
+
+/* Header Style */
+.header {
+    @apply bg-white shadow py-4;
+}
+
+.header-logo {
+    @apply text-2xl font-bold text-blue-600;
+}
+
+.nav-link {
+    @apply text-gray-700 hover:text-blue-600;
+}
+
+/* Auth Button Styles */
+.auth-button {
+    @apply text-gray-700;
+}
+
+.auth-button:hover {
+    @apply hover:text-blue-600;
+}
+
+.logout-button {
+    @apply text-gray-700 hover:text-red-600;
+}
+
+/* Main Content Area */
+.main-content {
+    @apply py-8;
+}
+
+/* Footer Style */
+.footer {
+    @apply bg-white border-t py-4 mt-12 text-center text-gray-600;
+}
+
+.codeblock {
+    @apply block bg-gray-100 p-4 my-4 text-left whitespace-pre-wrap;
+}
