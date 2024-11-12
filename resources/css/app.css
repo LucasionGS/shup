@@ -48,3 +48,11 @@
 .codeblock {
     @apply block bg-gray-100 p-4 my-4 text-left whitespace-pre-wrap;
 }
+
+.user-profile-menu {
+    @apply absolute flex flex-col bg-white border-gray-200 border-2;
+}
+
+.user-profile-menu--item {
+    @apply py-3 px-4 hover:bg-gray-300;
+}

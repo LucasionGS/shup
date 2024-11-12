@@ -47,6 +47,8 @@ Route::middleware(['auth'])->group(function () {
     })->name('password.request');
 
     Route::get('/resetapi', [AuthController::class, 'resetApiToken'])->name('resetapi');
+
+    Route::post('/user', [AuthController::class, 'updateImage'])->name('updateUserImage');
 });
 
 
@@ -54,8 +56,9 @@ Route::middleware(['auth'])->group(function () {
 // Short URL - s
 Route::get('/s/{shortCode}', action: [ShortURLController::class, 'redirect']);
 Route::post('/s', [ShortURLController::class, 'store']);
+Route::delete('/s/{shortCode}', [ShortURLController::class, 'destroy']);
 
-// Short URL - s
+// Files - f
 Route::get('/f/{shortCode}/delete', [FileController::class, 'destroy']);
 Route::delete('/f/{shortCode}', [FileController::class, 'destroy']);
 Route::post('/f', [FileController::class, 'store']);

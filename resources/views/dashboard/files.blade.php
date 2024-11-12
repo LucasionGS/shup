@@ -35,7 +35,7 @@
                         <td class="py-2 px-4 border text-center">{{ $file->downloads }}</td>
                         <td class="py-2 px-4 border text-center">
                             @if($file->expires)
-                                <span class="text-red-500">(Expires: {{ Carbon\Carbon::parse($file->expires)->diffForHumans() }})</span>
+                                <span class="text-red-500">Expires: {{ Carbon\Carbon::parse($file->expires)->diffForHumans() }}</span>
                             @endif
                         </td>
                         <td class="py-2 px-4 border text-center">
@@ -44,8 +44,16 @@
                             @endif
                         </td>
                         <td class="py-2 px-4 border text-center">
+                            @if (Auth::check() && str_starts_with($file->mime, "image/"))
+                                <form action="{{ route("updateUserImage") }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('POST')
+                                    <input type="hidden" name="url" value="{{ "/f/$file->short_code" }}">
+                                    <button type="submit" class="text-green-600 hover:underline ml-2">Set Profile Image</button>
+                                </form>
+                            @endif
                             <a href="{{ url("f/$file->short_code") }}" class="text-blue-600 hover:underline">Download</a>
-                            <form action="{{ url("f/$file->short_code?force=1") }}" method="POST" class="inline">
+                            <form action="{{ url("f/$file->short_code?force=1&_back=1") }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:underline ml-2">Delete</button>

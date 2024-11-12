@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+const ROLE_USER = 0;
+const ROLE_ADMIN = 1;
+const ROLE_CONTENT_MODERATOR = 2;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -24,6 +28,8 @@ class User extends Authenticatable
         'api_token',
         'storage_limit',
         'storage_used',
+        'role',
+        'image',
     ];
 
     /**
@@ -53,8 +59,8 @@ class User extends Authenticatable
         bool $save = true
     ) {
         $size = File::where("user_id", $this->id)->sum('size')
-                + PasteBin::where("user_id", $this->id)->sum('size')
-                + ShortURL::where("user_id", $this->id)->sum('size');
+            + PasteBin::where("user_id", $this->id)->sum('size')
+            + ShortURL::where("user_id", $this->id)->sum('size');
 
         if ($save) {
             $this->storage_used = $size;
@@ -62,5 +68,64 @@ class User extends Authenticatable
         }
 
         return $this->storage_used;
+    }
+
+    private static $roles = [ // Order determines hierarchy. Higher index means higher role.
+        // Lowest role
+        ROLE_USER               => 'User',
+        ROLE_CONTENT_MODERATOR  => 'Content Moderator',
+        ROLE_ADMIN              => 'Admin',
+        // Highest role
+    ];
+
+    public function getRoleName(): string
+    {
+        return static::$roles[$this->role] ?? 'Unknown';
+    }
+
+    /**
+     * Returns true if the user has the given role or a higher one.
+     * @param int $role
+     * @param bool $exact If true, only returns true if the user has the exact role. Does not consider higher roles.
+     * @return bool
+     */
+    public function isRole(int $role, bool $exact = false): bool
+    {
+        $r = $this->role;
+        if ($r === $role) { return true; }
+        if ($exact) { return false; }
+
+        $roles = array_keys(self::$roles);
+        $rIndex = array_search($r, $roles);
+        $roleIndex = array_search($role, $roles);
+
+        return $rIndex > $roleIndex;
+    }
+
+    /**
+     * Returns true if the user is an admin or higher.
+     * @return string
+     */
+    public function isAdmin(): bool
+    {
+        return $this->isRole(ROLE_ADMIN, exact: true); // Admin is highest, no need to check for higher roles
+    }
+
+    /**
+     * Returns true if the user is a content moderator or higher.
+     * @return bool
+     */
+    public function isContentModerator(): bool
+    {
+        return $this->isRole(ROLE_CONTENT_MODERATOR);
+    }
+
+    /**
+     * Returns true if the user is a regular user. False if they are any other role.
+     * @return bool
+     */
+    public function isUser(): bool
+    {
+        return $this->isRole(ROLE_USER, exact: true);
     }
 }

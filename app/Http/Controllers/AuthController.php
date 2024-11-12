@@ -77,4 +77,19 @@ class AuthController extends Controller
 
         return redirect()->back();
     }
+
+    public function updateImage(Request $request) {
+        // TODO: Make safer for the love of all that's holy.
+        $imageUrl = $request->input("url");
+
+        /**
+         * @var User
+         */
+        $user = Auth::user();
+
+        $user->image = $imageUrl;
+        $user->save();
+
+        return back();
+    }
 }

@@ -71,6 +71,8 @@ class PasteBinController extends Controller
             $uploader->increment('storage_used', $pasteBin->size);
         }
 
+        if ($request->query("_back")) { return back(); }
+        
         return response()->json([
             'url' => url("/p/{$pasteBin->short_code}"),
             'short_code' => $pasteBin->short_code,
@@ -138,6 +140,8 @@ class PasteBinController extends Controller
         }
 
         $pasteBin->delete();
+
+        if ($request->query("_back")) { return back(); }
 
         return response()->json(['message' => 'Paste bin deleted'], 204);
     }

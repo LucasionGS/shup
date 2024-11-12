@@ -57,6 +57,8 @@ class ShortURLController extends Controller
 
         $url = url("/s/$shortURL->short_code");
         
+        if ($request->query("_back")) { return back(); }
+        
         return response()->json([
             'url' => $url,
             'short_code' => $shortURL->short_code
@@ -69,5 +71,31 @@ class ShortURLController extends Controller
         $shortURL = ShortURL::where('short_code', $shortCode)->firstOrFail();
         $shortURL->increment('hits');
         return redirect($shortURL->url);
+    }
+
+    public function destroy(Request $request, string $shortCode)
+    {
+        $potentialBearer = $request->header('Authorization') ?? null;
+        /** @var User|null */
+        $uploader = $request->user() ?? (
+            $potentialBearer ? User::firstWhere('api_token', $potentialBearer) : null
+        ) ?? null;
+
+        /** @var ShortURL */
+        $shortURL = ShortURL::where('short_code', $shortCode)->firstOrFail();
+
+        if ($uploader?->id !== $shortURL->user_id) {
+            return response()->json([
+                'error' => 'Unauthorized'
+            ], 401);
+        }
+
+        $shortURL->delete();
+
+        if ($request->query("_back")) { return back(); }
+        
+        return response()->json([
+            'message' => 'Deleted'
+        ]);
     }
 }

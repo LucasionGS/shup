@@ -46,7 +46,7 @@
                         </td>
                         <td class="py-2 px-4 border text-center">
                             <a href="{{ url("p/{$paste->short_code}") }}" class="text-blue-600 hover:underline">View</a>
-                            <form action="{{ url("p/{$paste->short_code}?force=1") }}" method="POST" class="inline">
+                            <form action="{{ url("p/{$paste->short_code}?force=1&_back=1") }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:underline ml-2">Delete</button>

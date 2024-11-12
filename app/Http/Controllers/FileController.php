@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use App\Models\User;
+use Auth;
 use Crypt;
 use Hash;
 use Illuminate\Http\Request;
@@ -30,7 +31,11 @@ class FileController extends Controller
             }
         }
         
-        $file->increment('downloads');
+        if (!Auth::check() || Auth::id() !== $file->user_id) {
+            $file->increment('downloads');
+        }
+        
+        // $file->increment('downloads');
         $path = "app/private/files/$shortCode";
         
         $path = storage_path($path);
@@ -144,6 +149,8 @@ class FileController extends Controller
             $uploader->increment('storage_used', $filesize);
         }
 
+        if ($request->query("_back")) { return back(); }
+        
         return response()->json([
             'url' => $url,
             'short_code' => $shortCode
@@ -175,6 +182,9 @@ class FileController extends Controller
         }
         
         $file->expire();
+
+        if ($request->query("_back")) { return back(); }
+        
         return response()->json([
             'message' => 'File deleted'
         ], 204);
