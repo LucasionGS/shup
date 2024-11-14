@@ -67,6 +67,9 @@
 
     <div class="mt-6 text-center">
         Use with ShareX
+        @php
+        $user = auth()->user();
+        @endphp
 <code class="codeblock">{
     "Version": "16.1.0",
     "Name": "s.ionnet.dev File Upload",
