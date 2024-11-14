@@ -5,13 +5,13 @@
 @php
     $user = auth()->user();
     
-    $filesCount = \App\Models\File::where('user_id', $user->id)->get();
+    $users = \App\Models\File::where('user_id', $user->id)->get();
 @endphp
 
 <div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
     <h1 class="text-3xl font-bold mb-6 text-center">Your Uploaded Files</h1>
     
-    @if($filesCount->isEmpty())
+    @if($users->isEmpty())
         <p class="text-gray-700 text-center">You haven't uploaded any files yet.</p>
     @else
         <table class="w-full table-auto border-collapse">
@@ -27,33 +27,33 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($filesCount as $file)
+                @foreach($users as $user)
                     <tr class="text-gray-600">
-                        <td class="py-2 px-4 border">{{ $file->original_name }}</td>
-                        <td class="py-2 px-4 border">{{ $file->ext }}</td>
-                        <td class="py-2 px-4 border">{{ $file->mime }}</td>
-                        <td class="py-2 px-4 border text-center">{{ $file->downloads }}</td>
+                        <td class="py-2 px-4 border">{{ $user->original_name }}</td>
+                        <td class="py-2 px-4 border">{{ $user->ext }}</td>
+                        <td class="py-2 px-4 border">{{ $user->mime }}</td>
+                        <td class="py-2 px-4 border text-center">{{ $user->downloads }}</td>
                         <td class="py-2 px-4 border text-center">
-                            @if($file->expires)
-                                <span class="text-red-500">Expires: {{ Carbon\Carbon::parse($file->expires)->diffForHumans() }}</span>
+                            @if($user->expires)
+                                <span class="text-red-500">Expires: {{ Carbon\Carbon::parse($user->expires)->diffForHumans() }}</span>
                             @endif
                         </td>
                         <td class="py-2 px-4 border text-center">
-                            @if($file->password)
+                            @if($user->password)
                                 <span class="text-red-500 ml-2">(Protected)</span>
                             @endif
                         </td>
                         <td class="py-2 px-4 border text-center">
-                            @if (Auth::check() && str_starts_with($file->mime, "image/"))
+                            @if (Auth::check() && str_starts_with($user->mime, "image/"))
                                 <form action="{{ route("updateUserImage") }}" method="POST" class="inline">
                                     @csrf
                                     @method('POST')
-                                    <input type="hidden" name="url" value="{{ "/f/$file->short_code" }}">
+                                    <input type="hidden" name="url" value="{{ "/f/$user->short_code" }}">
                                     <button type="submit" class="text-green-600 hover:underline ml-2">Set Profile Image</button>
                                 </form>
                             @endif
-                            <a href="{{ url("f/$file->short_code") }}" class="text-blue-600 hover:underline">Download</a>
-                            <form action="{{ url("f/$file->short_code?force=1&_back=1") }}" method="POST" class="inline">
+                            <a href="{{ url("f/$user->short_code") }}" class="text-blue-600 hover:underline">Download</a>
+                            <form action="{{ url("f/$user->short_code?force=1&_back=1") }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:underline ml-2">Delete</button>

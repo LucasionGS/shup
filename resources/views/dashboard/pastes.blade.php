@@ -5,7 +5,7 @@
 @php
     $user = auth()->user();
     
-    $filesCount = \App\Models\File::where('user_id', $user->id)->get();
+    $users = \App\Models\File::where('user_id', $user->id)->get();
     $pastes = \App\Models\PasteBin::where('user_id', $user->id)->get();
 @endphp
 

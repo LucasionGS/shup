@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ShortURLController;
 use App\Http\Controllers\PasteBinController;
@@ -49,8 +50,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/resetapi', [AuthController::class, 'resetApiToken'])->name('resetapi');
 
     Route::post('/user', [AuthController::class, 'updateImage'])->name('updateUserImage');
+    Route::put('/user/{user}', [AuthController::class, 'update'])->name('updateUser');
+
+    Route::post('/configure', [
+        ConfigurationController::class, 'store'
+      ])->name('configure');
 });
 
+Route::middleware(['auth', 'isAdmin'])->group(function () {
+    // Admin only
+    Route::get('/admin/users', function () {
+        return view('admin.users');
+    })->name('admin.users');
+    Route::post('/user/invite', [AuthController::class, 'invite'])->name('inviteUser');
+});
 
 // APIs
 // Short URL - s

@@ -22,6 +22,10 @@
             </nav> -->
             <div class="flex justify-center items-center gap-4">
                 @auth
+                    @php
+                        $user = auth()->user();
+                    @endphp
+                    <a href="{{ url('/admin/users') }}" class="auth-button">Admin</a>
                     <a href="{{ url('/dashboard') }}" class="auth-button">Dashboard</a>
                     
                     <!-- <a href="{{ route('logout') }}" class="logout-button">Logout</a> -->
@@ -77,6 +81,9 @@
                             
                             const list = [
                                 {
+                                    label: "{{ $user->getRoleName() }}",
+                                },
+                                {
                                     label: "Profile",
                                     url: "/profile"
                                 },
@@ -91,10 +98,12 @@
                             
                             for (let i = 0; i < list.length; i++) {
                                 const item = list[i];
-                                const a = document.createElement("a");
+                                const a = document.createElement(item.url ? "a" : "div");
                                 a.classList.add("user-profile-menu--item");
                                 a.textContent = item.label;
-                                a.href = item.url;
+                                if (item.url) {
+                                    a.href = item.url;
+                                }
 
                                 div.appendChild(a);
                             }

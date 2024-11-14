@@ -7,10 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-const ROLE_USER = 0;
-const ROLE_ADMIN = 1;
-const ROLE_CONTENT_MODERATOR = 2;
-
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -70,11 +66,15 @@ class User extends Authenticatable
         return $this->storage_used;
     }
 
-    private static $roles = [ // Order determines hierarchy. Higher index means higher role.
+    const ROLE_USER = 0;
+    const ROLE_ADMIN = 1;
+    const ROLE_CONTENT_MODERATOR = 2;
+    
+    public static $roles = [ // Order determines hierarchy. Higher index means higher role.
         // Lowest role
-        ROLE_USER               => 'User',
-        ROLE_CONTENT_MODERATOR  => 'Content Moderator',
-        ROLE_ADMIN              => 'Admin',
+        User::ROLE_USER               => 'User',
+        User::ROLE_CONTENT_MODERATOR  => 'Content Moderator',
+        User::ROLE_ADMIN              => 'Admin',
         // Highest role
     ];
 
@@ -103,29 +103,26 @@ class User extends Authenticatable
     }
 
     /**
-     * Returns true if the user is an admin or higher.
-     * @return string
+     * Returns true if the user is an admin.
      */
     public function isAdmin(): bool
     {
-        return $this->isRole(ROLE_ADMIN, exact: true); // Admin is highest, no need to check for higher roles
+        return $this->isRole(User::ROLE_ADMIN, exact: true); // Admin is highest, no need to check for higher roles
     }
 
     /**
      * Returns true if the user is a content moderator or higher.
-     * @return bool
      */
     public function isContentModerator(): bool
     {
-        return $this->isRole(ROLE_CONTENT_MODERATOR);
+        return $this->isRole(User::ROLE_CONTENT_MODERATOR);
     }
 
     /**
      * Returns true if the user is a regular user. False if they are any other role.
-     * @return bool
      */
     public function isUser(): bool
     {
-        return $this->isRole(ROLE_USER, exact: true);
+        return $this->isRole(User::ROLE_USER, exact: true);
     }
 }

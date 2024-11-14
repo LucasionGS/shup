@@ -4,7 +4,7 @@
 
 @php
     $user = auth()->user();
-    $filesCount = \App\Models\File::where('user_id', $user->id)->count();
+    $users = \App\Models\File::where('user_id', $user->id)->count();
     $urlsCount = \App\Models\ShortURL::where('user_id', $user->id)->count();
     $pasteBinsCount = \App\Models\PasteBin::where('user_id', $user->id)->count();
     
@@ -34,7 +34,7 @@
     <div class="grid grid-cols-3 gap-4">
         <div class="bg-gray-200 p-4 rounded">
             <h2 class="text-xl font-bold mb-2">Your Uploaded Files</h2>
-            <p class="text-gray-700">You have uploaded {{ $filesCount }} files.</p>
+            <p class="text-gray-700">You have uploaded {{ $users }} files.</p>
             <a href="{{ route('files') }}" class="text-blue-600 hover:underline">View Files</a>
         </div>
         <div class="bg-gray-200 p-4 rounded">

@@ -54,5 +54,9 @@
 }
 
 .user-profile-menu--item {
-    @apply py-3 px-4 hover:bg-gray-300;
+    @apply py-3 px-4 bg-gray-200;
+}
+
+a.user-profile-menu--item {
+    @apply bg-white hover:bg-gray-300;
 }
