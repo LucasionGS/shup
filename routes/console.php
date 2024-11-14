@@ -18,10 +18,13 @@ Artisan::command('su:expired', function () {
         \App\Models\PasteBin::class,
         \App\Models\ShortURL::class,
     ];
-    // $this->comment('Deleted ' . \App\Models\ShortURL::where('expires', '<', now())->delete() . ' expired short URLs');
+
     foreach ($models as $model) {
         $this->comment('Deleted ' . $model::deleteExpired() . ' expired ' . $model);
     }
+
+    // Delete expired invites
+    $this->comment('Deleted ' . \App\Models\InvitedUsers::where('expires_at', '<', now())->delete() . ' expired invites');
 })->purpose('Runs through all the expirable items and deletes them')->everyMinute();
 
 Artisan::command('su:signup {action}', function ($action) {
