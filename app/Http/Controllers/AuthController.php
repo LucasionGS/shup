@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\RegistrationInvitation;
 use App\Models\Configuration;
 use App\Models\InvitedUsers;
 use App\Models\User;
 use Auth;
 use Illuminate\Http\Request;
+use Mail;
 use Symfony\Component\Uid\UuidV4;
 
 class AuthController extends Controller
@@ -187,13 +189,23 @@ class AuthController extends Controller
 
         $email = $request->input("email");
 
+        $exist = InvitedUsers::where("email", $email)->first();
+
+        if ($exist) {
+            $exist->delete(); // Delete old invite
+        }
+        
         $token = InvitedUsers::generateToken($email);
 
+        $url = route("register", ["invite" => $token]);
+        
+        Mail::to($email)->send(new RegistrationInvitation($url));
+
         if ($request->query("_back")) {
-            $url = route("register", ["invite" => $token]);
             return back()
                 ->with("invite_info", "$email has been invited: $url");
         }
+
         
         return response()->json([
             'token' => $token,
