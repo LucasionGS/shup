@@ -19,7 +19,7 @@
         "mime" => request()->query("mime"),
     ];
     
-    $fq = \App\Models\File::where('user_id', $user->id);
+    $fq = \App\Models\File::where('user_id', $user->id)->orderBy('created_at', 'desc');
     
     if ($activeFilters["name"]) {
         $fq->where('original_name', "LIKE", "%" . $activeFilters["name"] . "%");
