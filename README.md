@@ -24,9 +24,9 @@ As of now, Shup is not yet ready for production use. However, you can still inst
 - PHP-supporting Web server (Nginx, Apache, etc.)
 
 ### Steps
-1. Clone the repository
+1. Clone the repository. It is recommended to use the stable branch for the latest stable version.
 ```bash
-git clone https://github.com/LucasionGS/shup
+git clone https://github.com/LucasionGS/shup --branch stable
 ```
 
 2. Install dependencies
