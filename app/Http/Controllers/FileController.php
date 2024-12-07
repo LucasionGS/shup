@@ -14,10 +14,21 @@ class FileController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, string $shortCode)
+    public function show(Request $request, string $shortCode, ?string $filename = null)
     {
         /** @var File */
         $file = File::where('short_code', $shortCode)->firstOrFail();
+
+        if ($filename) {
+            if ($filename !== $file->original_name) {
+                return response()->json([
+                    'error' => 'File not found'
+                ], 404);
+            }
+        }
+        else {
+            return redirect("/f/$shortCode/{$file->original_name}");
+        }
 
         $password = $request->input('password') ?? $request->input("pwd") ?? null;
 
@@ -51,12 +62,12 @@ class FileController extends Controller
                 'Content-Type' => $mime,
             ];
 
-            if (
-                str_starts_with($mime, "image/")
-                || str_starts_with($mime, "video/")
-            ) {
-                $headers['Content-Disposition'] = "attachment; filename=\"{$file->original_name}\"";
-            }
+            // if (
+            //     str_starts_with($mime, "image/")
+            //     || str_starts_with($mime, "video/")
+            // ) {
+            //     $headers['Content-Disposition'] = "attachment; filename=\"{$file->original_name}\"";
+            // }
             
             return response($decrypted, 200, $headers);
             // /DECRYPTION

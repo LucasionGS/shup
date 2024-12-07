@@ -76,6 +76,7 @@ Route::get('/f/{shortCode}/delete', [FileController::class, 'destroy']);
 Route::delete('/f/{shortCode}', [FileController::class, 'destroy']);
 Route::post('/f', [FileController::class, 'store']);
 Route::get('/f/{shortCode}', [FileController::class, 'show']);
+Route::get('/f/{shortCode}/{filename}', [FileController::class, 'show']);
 
 // Paste Bin routes
 Route::post('/p', [PasteBinController::class, 'store']);
