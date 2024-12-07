@@ -17,6 +17,7 @@ class File extends Model implements Expireable
         'password',
         'expires',
         'user_id',
+        'size'
     ];
 
     /**
@@ -44,5 +45,41 @@ class File extends Model implements Expireable
             $file->expire();
         }
         return $count;
+    }
+
+    public static function reduceFileSize($bytes) {
+        $bytes = (int) $bytes;
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $unit = 0;
+        while ($bytes >= 1024 && $unit < count($units) - 1) {
+            $bytes /= 1024;
+            $unit++;
+        }
+        return round($bytes, 2) . ' ' . $units[$unit];
+    }
+
+    public static function expandFileSize($size) {
+        $size = explode(' ', $size);
+        $unit = $size[1];
+        $size = (int) $size[0];
+        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        $unit = array_search($unit, $units);
+        while ($unit > 0) {
+            $size *= 1024;
+            $unit--;
+        }
+        return $size;
+    }
+
+    public static function expandPHPFileSize(string $size) {
+        $unit = $size[-1];
+        $size = (int) $size[0];
+        $units = ['B', 'K', 'M', 'G', 'T'];
+        $unit = array_search($unit, $units);
+        while ($unit > 0) {
+            $size *= 1024;
+            $unit--;
+        }
+        return $size;
     }
 }

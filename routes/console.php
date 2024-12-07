@@ -57,6 +57,56 @@ Artisan::command("su:recalculate_storage", function () {
     $this->comment('Done');
 })->purpose('Recalculate storage for all users')->daily();
 
+Artisan::command("su:recalculate_physical_storage", function () {
+    $this->comment('Recalculating physical storage for all content...');
+    
+    
+    // \App\Models\File::class;
+    $files = \App\Models\File::all();
+    $file_count = $files->count();
+    for ($i = 0; $i < $file_count; $i++) {
+        $file = $files[$i];
+        $rI = $i + 1;
+        $this->comment("Processing file {$rI}/{$file_count}");
+        $file_path = "app/private/files/$file->short_code";
+        $file_path = storage_path($file_path);
+        $file_size = filesize($file_path);
+
+        $file->size = $file_size;
+        $file->save();
+        $this->comment("File size updated to {$file_size} bytes");
+    }
+
+    // \App\Models\PasteBin::class;
+    $paste_bins = \App\Models\PasteBin::all();
+    $paste_bin_count = $paste_bins->count();
+    for ($i = 0; $i < $paste_bin_count; $i++) {
+        $paste_bin = $paste_bins[$i];
+        $rI = $i + 1;
+        $this->comment("Processing paste bin {$rI}/{$paste_bin_count}");
+        $paste_bin->size = strlen($paste_bin->content);
+        $paste_bin->save();
+        $this->comment("Paste bin size updated to {$paste_bin->size} bytes");
+    }
+
+    // \App\Models\ShortURL::class;
+    $short_urls = \App\Models\ShortURL::all();
+    $short_url_count = $short_urls->count();
+    for ($i = 0; $i < $short_url_count; $i++) {
+        $short_url = $short_urls[$i];
+        $rI = $i + 1;
+        $this->comment("Processing short URL {$rI}/{$short_url_count}");
+        $short_url->size = strlen($short_url->url);
+        $short_url->save();
+        $this->comment("Short URL size updated to {$short_url->size} bytes");
+    }
+
+    $this->comment('Recalculating user totals...');
+    Artisan::call('su:recalculate_storage');
+    
+    $this->comment('Done');
+})->purpose('Recalculate storage for all users')->daily();
+
 Artisan::command("su:role {email?} {role?}", function ($email = null, $role = null) {
 
     if ($email === null) {

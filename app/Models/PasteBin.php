@@ -14,6 +14,7 @@ class PasteBin extends Model implements Expireable
         'password',
         'expires',
         'user_id',
+        'size'
     ];
 
     public function expire(): void {

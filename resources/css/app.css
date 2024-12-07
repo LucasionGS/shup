@@ -60,3 +60,7 @@
 a.user-profile-menu--item {
     @apply bg-white hover:bg-gray-300;
 }
+
+.form-select {
+    @apply bg-white px-2 py-1 outline-none border border-gray-300 rounded;
+}

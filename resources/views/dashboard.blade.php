@@ -7,17 +7,6 @@
     $users = \App\Models\File::where('user_id', $user->id)->count();
     $urlsCount = \App\Models\ShortURL::where('user_id', $user->id)->count();
     $pasteBinsCount = \App\Models\PasteBin::where('user_id', $user->id)->count();
-    
-    function reduceFileSize($bytes) {
-        $bytes = (int) $bytes;
-        $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        $unit = 0;
-        while ($bytes >= 1024 && $unit < count($units) - 1) {
-            $bytes /= 1024;
-            $unit++;
-        }
-        return round($bytes, 2) . ' ' . $units[$unit];
-    }
 @endphp
 
 <div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
@@ -25,7 +14,7 @@
     <p>
         Welcome back, {{ $user->name }}!
         <br>
-        You have used {{ reduceFileSize($user->storage_used) }} / {{ $user->storage_limit === 0 ? "∞" : reduceFileSize($user->storage_limit) }} of your storage.
+        You have used {{ \App\Models\File::reduceFileSize($user->storage_used) }} / {{ $user->storage_limit === 0 ? "∞" : \App\Models\File::reduceFileSize($user->storage_limit) }} of your storage.
         <br>
         <br>
         Need to reset your API key?

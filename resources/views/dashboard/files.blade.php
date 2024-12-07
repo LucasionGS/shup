@@ -41,6 +41,33 @@
 @endphp
 
 <div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
+    <h1 class="text-3xl font-bold mb-6 text-center">Upload file</h1>
+    <form action="{{ url('f') }}?_back=1" method="POST" class="mt-6" enctype="multipart/form-data">
+        @csrf
+        <div class="flex flex-col md:flex-row">
+            <input type="file" name="file" class="py-2 px-4 border rounded mb-2 md:mb-0 md:w-3/4">
+            <button type="submit" class="py-2 px-4 bg-blue-600 text-white rounded w-full md:w-1/4">Upload</button>
+        </div>
+        <sub>
+            Max upload size: {{ php_ini_loaded_file() ? \App\Models\File::reduceFileSize(
+                min(
+                    \App\Models\File::expandPHPFileSize(ini_get('upload_max_filesize')),
+                    \App\Models\File::expandPHPFileSize(ini_get('post_max_size'))
+                )
+        ) : "Unknown" }}        </sub>
+    </form>
+    @if (session('short_url'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-6" role="alert">
+            <span class="block sm:inline">
+                File uploaded: <a href="{{ session('short_url') }}" class="text-blue-600 hover:underline">{{ session('short_url') }}</a>
+                
+                <button class="clipboard" data-clipboard-text="{{ session('short_url') }}">📋</button>
+            </span>
+        </div>
+    @endif
+
+    <br>
+    
     <h1 class="text-3xl font-bold mb-6 text-center">Your Uploaded Files</h1>
     
     @if($files->isEmpty() && empty($activeFilters["ext"]) && empty($activeFilters["mime"]))
@@ -99,6 +126,8 @@
                         <td class="py-2 px-4 border w-40">
                             @if(str_starts_with($file->mime, "image/"))
                                 <img src='{{"/f/$file->short_code"}}' class="block w-40 max-h-40 object-scale-down">
+                            @elseif(str_starts_with($file->mime, "audio/"))
+                                <audio src='{{"/f/$file->short_code"}}' class="block w-40 max-h-40 object-scale-down" controls></audio>
                             @endif
                         </td>
                         <td class="py-2 px-4 border">{{ $file->original_name }}</td>
@@ -125,7 +154,9 @@
                                 </form>
                             @endif
                             <a href="{{ url("f/$file->short_code") }}" class="text-blue-600 hover:underline">Download</a>
-                            <form action="{{ url("f/$file->short_code?force=1&_back=1") }}" method="POST" class="inline">
+                            <form action="{{ url("f/$file->short_code?force=1&_back=1") }}" method="POST" class="inline"
+                                onsubmit="return confirm('Are you sure you want to delete this file? This action cannot be undone.');"
+                            >
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:underline ml-2">Delete</button>

@@ -116,3 +116,15 @@ server {
 ```bash
 php artisan serve
 ```
+
+## Updating
+To update Shup, you can simply pull the latest changes from the repository and run the necessary commands that might be required.
+
+Running them even if they are not required should not cause any issues.
+```bash
+git pull
+composer install
+npm install
+php artisan migrate
+npm run build
+```

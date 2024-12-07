@@ -25,7 +25,9 @@
                     @php
                         $user = auth()->user();
                     @endphp
-                    <a href="{{ url('/admin/users') }}" class="auth-button">Admin</a>
+                    @if ($user->isAdmin())
+                        <a href="{{ url('/admin/users') }}" class="auth-button">Admin</a>
+                    @endif
                     <a href="{{ url('/dashboard') }}" class="auth-button">Dashboard</a>
                     
                     <!-- <a href="{{ route('logout') }}" class="logout-button">Logout</a> -->

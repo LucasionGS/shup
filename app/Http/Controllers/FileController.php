@@ -149,7 +149,7 @@ class FileController extends Controller
             $uploader->increment('storage_used', $filesize);
         }
 
-        if ($request->query("_back")) { return back(); }
+        if ($request->query("_back")) { return back()->with("short_url", $url); }
         
         return response()->json([
             'url' => $url,

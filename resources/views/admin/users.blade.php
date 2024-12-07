@@ -15,11 +15,20 @@
         @csrf
         @method('POST')
         <h2 class="text-xl font-bold mb-2">General</h2>
-        <label for="allow_signups" class="block text-gray-700 font-bold mb-2">Allow Signups</label>
-        @include('form-inputs.select-bool', [
-            'name' => 'allow_signup', 'value' => App\Models\Configuration::getBool('allow_signup', false)
-        ])
-
+        <div class="flex gap-8">
+            <div>
+                <label for="allow_signups" class="block text-gray-700 font-bold mb-2">Allow Signups</label>
+                @include('form-inputs.select-bool', [
+                    'name' => 'allow_signup', 'value' => App\Models\Configuration::getBool('allow_signup', false)
+                ])
+            </div>
+            <div>
+                <label for="allow_anonymous_upload" class="block text-gray-700 font-bold mb-2">Allow Anonymous Uploads</label>
+                @include('form-inputs.select-bool', [
+                    'name' => 'allow_anonymous_upload', 'value' => App\Models\Configuration::getBool('allow_anonymous_upload', false)
+                ])
+            </div>
+        </div>
         <br>
         <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">Save</button>
     </form>

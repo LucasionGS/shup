@@ -71,10 +71,12 @@ class PasteBinController extends Controller
             $uploader->increment('storage_used', $pasteBin->size);
         }
 
-        if ($request->query("_back")) { return back(); }
+        $url = url("/p/{$pasteBin->short_code}");
+
+        if ($request->query("_back")) { return back()->with("short_url", $url); }
         
         return response()->json([
-            'url' => url("/p/{$pasteBin->short_code}"),
+            'url' => $url,
             'short_code' => $pasteBin->short_code,
         ], 201);
     }

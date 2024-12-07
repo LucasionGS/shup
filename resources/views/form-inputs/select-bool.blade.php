@@ -2,7 +2,7 @@
   $name ??= $id ?? null;
   $id ??= $name ?? null;
   $value ??= false;
-  $class ??= null;
+  $class ??= "form-select";
 
   $trueLabel ??= "Yes";
   $falseLabel ??= "No";

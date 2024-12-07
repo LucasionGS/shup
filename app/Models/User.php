@@ -54,9 +54,9 @@ class User extends Authenticatable
     public function calculateStorage(
         bool $save = true
     ) {
-        $size = File::where("user_id", $this->id)->sum('size')
-            + PasteBin::where("user_id", $this->id)->sum('size')
-            + ShortURL::where("user_id", $this->id)->sum('size');
+        $size = File::where("user_id", $this->id)->select("size")->sum('size')
+            + PasteBin::where("user_id", $this->id)->select("size")->sum('size')
+            + ShortURL::where("user_id", $this->id)->select("size")->sum('size');
 
         if ($save) {
             $this->storage_used = $size;

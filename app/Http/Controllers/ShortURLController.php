@@ -57,7 +57,7 @@ class ShortURLController extends Controller
 
         $url = url("/s/$shortURL->short_code");
         
-        if ($request->query("_back")) { return back(); }
+        if ($request->query("_back")) { return back()->with("short_url", $url); }
         
         return response()->json([
             'url' => $url,

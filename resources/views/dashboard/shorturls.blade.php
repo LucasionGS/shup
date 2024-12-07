@@ -8,6 +8,26 @@
 @endphp
 
 <div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
+    <h1 class="text-3xl font-bold mb-6 text-center">Create Short URL</h1>
+    <form action="{{ url('s') }}?_back=1" method="POST" class="mt-6">
+        @csrf
+        <div class="flex flex-col md:flex-row">
+            <input type="text" name="url" placeholder="URL to shorten" class="py-2 px-4 border rounded mb-2 md:mb-0 md:w-3/4">
+            <button type="submit" class="py-2 px-4 bg-blue-600 text-white rounded w-full md:w-1/4">Shorten</button>
+        </div>
+    </form>
+    @if (session('short_url'))
+        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-6" role="alert">
+            <span class="block sm:inline">
+                Short URL created: <a href="{{ session('short_url') }}" class="text-blue-600 hover:underline">{{ session('short_url') }}</a>
+                
+                <button class="clipboard" data-clipboard-text="{{ session('short_url') }}">📋</button>
+            </span>
+        </div>
+    @endif
+    
+    <br>
+
     <h1 class="text-3xl font-bold mb-6 text-center">Your Shortened URLs</h1>
     
     @if($shortUrls->isEmpty())
@@ -47,8 +67,11 @@
                             @endif
                         </td>
                         <td class="py-2 px-4 border text-center">
+                            <button class="clipboard" data-clipboard-text="{{ url("s/{$shortUrl->short_code}") }}">📋</button>
                             <a href="{{ url("s/{$shortUrl->short_code}") }}" class="text-blue-600 hover:underline">Visit</a>
-                            <form action="{{ url("s/{$shortUrl->short_code}?force=1&_back=1") }}" method="POST" class="inline">
+                            <form action="{{ url("s/{$shortUrl->short_code}?force=1&_back=1") }}" method="POST" class="inline"
+                                onsubmit="return confirm('Are you sure you want to delete this short URL? This action cannot be undone.');"
+                            >
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="text-red-600 hover:underline ml-2">Delete</button>
