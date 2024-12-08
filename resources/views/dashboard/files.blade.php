@@ -70,7 +70,7 @@
     
     <h1 class="text-3xl font-bold mb-6 text-center">Your Uploaded Files</h1>
     
-    @if($files->isEmpty() && empty($activeFilters["ext"]) && empty($activeFilters["mime"] && empty($activeFilters["name"])))
+    @if($files->isEmpty() && empty($activeFilters["ext"]) && empty($activeFilters["mime"]) && empty($activeFilters["name"]))
         <p class="text-gray-700 text-center">You haven't uploaded any files yet.</p>
     @else
         <table class="w-full table-auto border-collapse">
