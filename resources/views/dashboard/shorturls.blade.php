@@ -15,6 +15,11 @@
             <input type="text" name="url" placeholder="URL to shorten" class="py-2 px-4 border rounded mb-2 md:mb-0 md:w-3/4">
             <button type="submit" class="py-2 px-4 bg-blue-600 text-white rounded w-full md:w-1/4">Shorten</button>
         </div>
+        @if($user->isAdmin())
+            <div class="flex flex-col md:flex-row">
+                <input type="text" name="custom_url" placeholder="Custom Shortcode" class="py-2 px-4 border rounded mb-2 md:mb-0 md:w-3/4">
+            </div>
+        @endif
     </form>
     @if (session('short_url'))
         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-6" role="alert">
@@ -25,9 +30,15 @@
             </span>
         </div>
     @endif
+    @if (session('error'))
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-6" role="alert">
+            <span class="block sm:inline">
+                {{ session('error') }}
+            </span>
+        </div>
+    @endif
     
     <br>
-
     <h1 class="text-3xl font-bold mb-6 text-center">Your Shortened URLs</h1>
     
     @if($shortUrls->isEmpty())

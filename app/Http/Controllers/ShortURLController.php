@@ -40,13 +40,36 @@ class ShortURLController extends Controller
                 $expireDate = now()->addMinutes((int)$expiresMins);
             }
         }
+
+        $_back = $request->query("_back");
+        $customUrl = $request->input('custom_url', null);
+
+        if ($customUrl && $uploader && $uploader->isAdmin()) {
+            if (!preg_match('/^[a-zA-Z0-9-_]{1,20}$/', $customUrl)) {
+                if ($_back) {
+                    return back()->with("error", "Invalid custom URL");
+                }
+                return response()->json([
+                    'error' => 'Invalid custom URL'
+                ], 400);
+            }
+
+            if (ShortURL::where('short_code', $customUrl)->exists()) {
+                if ($_back) {
+                    return back()->with("error", "Custom URL already exists");
+                }
+                return response()->json([
+                    'error' => 'Custom URL already exists'
+                ], 400);
+            }
+        }
         
         urlCreation:
         try {
             /** @var ShortURL */
             $shortURL = ShortURL::create([
                 'url' => $request->url,
-                'short_code' => $this->generateShortcode(),
+                'short_code' => $customUrl ?? $this->generateShortcode(),
                 'expires' => $expireDate,
                 'user_id' => $uploader?->id,
                 'size' => strlen($request->url)
@@ -57,7 +80,7 @@ class ShortURLController extends Controller
 
         $url = url("/s/$shortURL->short_code");
         
-        if ($request->query("_back")) { return back()->with("short_url", $url); }
+        if ($_back) { return back()->with("short_url", $url); }
         
         return response()->json([
             'url' => $url,
