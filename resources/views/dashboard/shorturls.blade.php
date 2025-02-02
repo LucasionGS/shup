@@ -98,7 +98,7 @@
         Use with ShareX
         <pre class="codeblock">{
     "Version": "16.1.0",
-    "Name": "s.ionnet.dev URL Shortener",
+    "Name": "Shup URL Shortener",
     "DestinationType": "URLShortener",
     "RequestMethod": "POST",
     "Headers": {

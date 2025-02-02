@@ -187,7 +187,7 @@
         @endphp
 <code class="codeblock">{
     "Version": "16.1.0",
-    "Name": "s.ionnet.dev File Upload",
+    "Name": "Shup File Upload",
     "DestinationType": "ImageUploader, FileUploader",
     "RequestMethod": "POST",
     "Headers": {

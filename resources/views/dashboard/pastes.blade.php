@@ -85,7 +85,7 @@
         Use with ShareX
         <code class="codeblock">{
     "Version": "16.1.0",
-    "Name": "s.ionnet.dev PasteBin Upload",
+    "Name": "Shup PasteBin Upload",
     "DestinationType": "TextUploader",
     "RequestMethod": "POST",
     "Headers": {
