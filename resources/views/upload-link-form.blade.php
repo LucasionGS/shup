@@ -32,7 +32,24 @@
                         <p class="text-sm mt-2">This upload link can no longer be used.</p>
                     </div>
                 @else
+                    <!-- Progress Bar (hidden by default) -->
+                    <div id="progress-container" class="hidden mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700">Uploading...</span>
+                            <span id="progress-percent" class="text-sm font-medium text-blue-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div 
+                                id="progress-bar" 
+                                class="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                                style="width: 0%"
+                            ></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1" id="progress-status">Preparing upload...</p>
+                    </div>
+
                     <form 
+                        id="upload-form"
                         action="/ul/{{ $link->short_code }}?_back=1" 
                         method="POST" 
                         enctype="multipart/form-data"
@@ -83,11 +100,84 @@
 
                         <button 
                             type="submit"
-                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200"
+                            id="submit-btn"
+                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             Upload File
                         </button>
                     </form>
+
+                    <script>
+                        document.getElementById('upload-form').addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            
+                            const form = e.target;
+                            const formData = new FormData(form);
+                            const progressContainer = document.getElementById('progress-container');
+                            const progressBar = document.getElementById('progress-bar');
+                            const progressPercent = document.getElementById('progress-percent');
+                            const progressStatus = document.getElementById('progress-status');
+                            const submitBtn = document.getElementById('submit-btn');
+                            
+                            // Show progress bar and disable submit button
+                            progressContainer.classList.remove('hidden');
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Uploading...';
+                            
+                            const xhr = new XMLHttpRequest();
+                            
+                            // Track upload progress
+                            xhr.upload.addEventListener('progress', function(e) {
+                                if (e.lengthComputable) {
+                                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                                    progressBar.style.width = percentComplete + '%';
+                                    progressPercent.textContent = percentComplete + '%';
+                                    
+                                    if (percentComplete < 100) {
+                                        progressStatus.textContent = `Uploading... ${formatBytes(e.loaded)} of ${formatBytes(e.total)}`;
+                                    } else {
+                                        progressStatus.textContent = 'Processing upload...';
+                                    }
+                                }
+                            });
+                            
+                            xhr.addEventListener('load', function() {
+                                if (xhr.status === 200 || xhr.status === 201) {
+                                    progressStatus.textContent = 'Upload complete! Redirecting...';
+                                    progressBar.style.width = '100%';
+                                    progressPercent.textContent = '100%';
+                                    
+                                    // Redirect after a brief delay
+                                    setTimeout(() => {
+                                        window.location.href = form.action;
+                                    }, 500);
+                                } else {
+                                    progressStatus.textContent = 'Upload failed. Please try again.';
+                                    progressBar.classList.add('bg-red-600');
+                                    submitBtn.disabled = false;
+                                    submitBtn.textContent = 'Upload File';
+                                }
+                            });
+                            
+                            xhr.addEventListener('error', function() {
+                                progressStatus.textContent = 'Network error. Please try again.';
+                                progressBar.classList.add('bg-red-600');
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = 'Upload File';
+                            });
+                            
+                            xhr.open('POST', form.action);
+                            xhr.send(formData);
+                        });
+                        
+                        function formatBytes(bytes) {
+                            if (bytes === 0) return '0 Bytes';
+                            const k = 1024;
+                            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                            const i = Math.floor(Math.log(bytes) / Math.log(k));
+                            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+                        }
+                    </script>
 
                     @if($link->expires)
                         <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
