@@ -7,6 +7,7 @@
     $users = \App\Models\File::where('user_id', $user->id)->count();
     $urlsCount = \App\Models\ShortURL::where('user_id', $user->id)->count();
     $pasteBinsCount = \App\Models\PasteBin::where('user_id', $user->id)->count();
+    $uploadLinksCount = \App\Models\UploadLink::where('user_id', $user->id)->count();
 @endphp
 
 <div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
@@ -20,7 +21,7 @@
         Need to reset your API key?
         <a href="{{ route('resetapi') }}" class="text-blue-600 hover:underline">Reset API Key here</a>.
     </p>
-    <div class="grid grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-gray-200 p-4 rounded">
             <h2 class="text-xl font-bold mb-2">Your Uploaded Files</h2>
             <p class="text-gray-700">You have uploaded {{ $users }} files.</p>
@@ -35,6 +36,11 @@
             <h2 class="text-xl font-bold mb-2">Your Paste Bins</h2>
             <p class="text-gray-700">You have created {{ $pasteBinsCount }} paste bins.</p>
             <a href="{{ route('pastes') }}" class="text-blue-600 hover:underline">View Paste Bins</a>
+        </div>
+        <div class="bg-gray-200 p-4 rounded">
+            <h2 class="text-xl font-bold mb-2">Upload Links</h2>
+            <p class="text-gray-700">You have created {{ $uploadLinksCount }} upload links.</p>
+            <a href="{{ route('uploadlinks') }}" class="text-blue-600 hover:underline">Manage Links</a>
         </div>
     </div>
 </div>

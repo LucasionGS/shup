@@ -5,6 +5,7 @@ use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ShortURLController;
 use App\Http\Controllers\PasteBinController;
+use App\Http\Controllers\UploadLinkController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/login', function () {
@@ -41,6 +42,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/pastes', function() {
         return view('dashboard.pastes');
     })->name('pastes');
+
+    Route::get('/dashboard/uploadlinks', function() {
+        return view('dashboard.uploadlinks');
+    })->name('uploadlinks');
 
     // Account
     Route::get('/passwordreset', function () {
@@ -82,3 +87,9 @@ Route::get('/f/{shortCode}/{filename}', [FileController::class, 'show']);
 Route::post('/p', [PasteBinController::class, 'store']);
 Route::get('/p/{shortCode}', [PasteBinController::class, 'show']);
 Route::delete('/p/{shortCode}', [PasteBinController::class, 'destroy']);
+
+// Upload Link routes - ul
+Route::post('/ul', [UploadLinkController::class, 'store'])->middleware('auth');
+Route::get('/ul/{shortCode}', [UploadLinkController::class, 'show']);
+Route::post('/ul/{shortCode}', [UploadLinkController::class, 'upload']);
+Route::delete('/ul/{shortCode}', [UploadLinkController::class, 'destroy'])->middleware('auth');
