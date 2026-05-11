@@ -11,26 +11,28 @@ if (isset($token)) {
 @endphp
 
 @section('content')
-<div class="max-w-md mx-auto bg-white shadow-md rounded px-8 py-6">
-    <h2 class="text-2xl font-bold mb-6 text-center">Create an Account</h2>
+<div class="app-panel app-panel--narrow auth-card">
+    <div class="public-brand">S</div>
+    <h2 class="text-2xl font-semibold mb-2">Create an Account</h2>
+    <p class="panel-subtitle mb-6 text-center">Set up your Shup vault for files, links, and paste bins.</p>
+
     @if($errors->any())
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <div class="alert-error mb-4" role="alert">
             <strong class="font-bold">Whoops!</strong>
             <span class="block sm:inline">{{ $errors->first() }}</span>
         </div>
     @endif
-    <form method="POST" action="{{ route('register') }}">
+
+    <form method="POST" action="{{ route('register') }}" class="form-stack">
         @csrf
-        <!-- Name Input -->
-        <div class="mb-4">
-            <label for="name" class="block text-gray-700 font-bold mb-2">Name</label>
-            <input type="text" id="name" name="name" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" required>
+        <div>
+            <label for="name" class="field-label">Name</label>
+            <input type="text" id="name" name="name" required>
         </div>
-        <!-- Email Input -->
-        <div class="mb-4">
-            <label for="email" class="block text-gray-700 font-bold mb-2">Email</label>
+        <div>
+            <label for="email" class="field-label">Email</label>
             <input
-                type="email" id="email" name="email" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" required
+                type="email" id="email" name="email" required
                 @isset($invited_user)
                     value="{{ $invited_user->email }}"
                     readonly
@@ -42,24 +44,19 @@ if (isset($token)) {
             <input type="hidden" name="invite" value="{{ $token }}">
         @endisset
         
-        <!-- Password Input -->
-        <div class="mb-4">
-            <label for="password" class="block text-gray-700 font-bold mb-2">Password</label>
-            <input type="password" id="password" name="password" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" required>
+        <div>
+            <label for="password" class="field-label">Password</label>
+            <input type="password" id="password" name="password" required>
         </div>
-        <!-- Confirm Password Input -->
-        <div class="mb-6">
-            <label for="password_confirmation" class="block text-gray-700 font-bold mb-2">Confirm Password</label>
-            <input type="password" id="password_confirmation" name="password_confirmation" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600" required>
+        <div>
+            <label for="password_confirmation" class="field-label">Confirm Password</label>
+            <input type="password" id="password_confirmation" name="password_confirmation" required>
         </div>
-        <!-- Submit Button -->
-        <div class="text-center">
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition duration-200">Register</button>
-        </div>
+        <button type="submit" class="btn-primary w-full">Register</button>
     </form>
-    <!-- Additional Links -->
-    <div class="mt-6 text-center">
-        <a href="{{ route('login') }}" class="text-blue-600 hover:underline">Already have an account? Login</a>
+
+    <div class="mt-6 text-center text-sm">
+        <a href="{{ route('login') }}">Already have an account? Login</a>
     </div>
 </div>
 @endsection

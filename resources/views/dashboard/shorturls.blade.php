@@ -7,95 +7,120 @@
     $shortUrls = \App\Models\ShortURL::where('user_id', $user->id)->get();
 @endphp
 
-<div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
-    <h1 class="text-3xl font-bold mb-6 text-center">Create Short URL</h1>
-    <form action="{{ url('s') }}?_back=1" method="POST" class="mt-6">
+<div class="app-panel">
+    <div class="panel-header">
+        <div>
+            <div class="panel-eyebrow">Redirects</div>
+            <h1 class="panel-title">Create Short URL</h1>
+            <p class="panel-subtitle">Turn long destinations into clean Shup links with hit tracking.</p>
+        </div>
+    </div>
+
+    <form action="{{ url('s') }}?_back=1" method="POST" class="form-stack">
         @csrf
-        <div class="flex flex-col md:flex-row">
-            <input type="text" name="url" placeholder="URL to shorten" class="py-2 px-4 border rounded mb-2 md:mb-0 md:w-3/4">
-            <button type="submit" class="py-2 px-4 bg-blue-600 text-white rounded w-full md:w-1/4">Shorten</button>
+        <div class="form-row">
+            <input type="url" name="url" placeholder="URL to shorten" required>
+            <button type="submit" class="btn-primary">Shorten</button>
         </div>
         @if($user->isAdmin())
-            <div class="flex flex-col md:flex-row">
-                <input type="text" name="custom_url" placeholder="Custom Shortcode" class="py-2 px-4 border rounded mb-2 md:mb-0 md:w-3/4">
+            <div class="max-w-xl">
+                <label for="custom_url" class="field-label">Custom shortcode</label>
+                <input type="text" name="custom_url" id="custom_url" placeholder="Optional admin override">
             </div>
         @endif
     </form>
+
     @if (session('short_url'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-6" role="alert">
-            <span class="block sm:inline">
-                Short URL created: <a href="{{ session('short_url') }}" class="text-blue-600 hover:underline">{{ session('short_url') }}</a>
-                
-                <button class="clipboard" data-clipboard-text="{{ session('short_url') }}">📋</button>
-            </span>
+        <div class="alert-success mt-6" role="alert">
+            <div class="font-semibold">Short URL created</div>
+            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                <input type="text" value="{{ session('short_url') }}" readonly>
+                <button class="clipboard btn-secondary" data-clipboard-text="{{ session('short_url') }}">Copy</button>
+            </div>
         </div>
     @endif
     @if (session('error'))
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-6" role="alert">
-            <span class="block sm:inline">
-                {{ session('error') }}
-            </span>
+        <div class="alert-error mt-6" role="alert">
+            {{ session('error') }}
         </div>
     @endif
-    
-    <br>
-    <h1 class="text-3xl font-bold mb-6 text-center">Your Shortened URLs</h1>
-    
-    @if($shortUrls->isEmpty())
-        <p class="text-gray-700 text-center">You haven't created any short URLs yet.</p>
-    @else
-        <table class="w-full table-auto border-collapse">
-            <thead>
-                <tr class="bg-gray-200 text-gray-700">
-                    <th class="py-2 px-4 border">Short Code</th>
-                    <th class="py-2 px-4 border">Original URL</th>
-                    <th class="py-2 px-4 border">Hits</th>
-                    <th class="py-2 px-4 border">Created At</th>
-                    <th class="py-2 px-4 border">Expires</th>
-                    <th class="py-2 px-4 border">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($shortUrls as $shortUrl)
-                    <tr class="text-gray-600">
-                        <td class="py-2 px-4 border">
-                            <a href="{{ url("s/{$shortUrl->short_code}") }}" class="text-blue-600 hover:underline">
-                                {{ $shortUrl->short_code }}
-                            </a>
-                        </td>
-                        <td class="py-2 px-4 border break-all">
-                            <a href="{{ $shortUrl->url }}" target="_blank" class="text-blue-600 hover:underline">
-                                {{ $shortUrl->url }}
-                            </a>
-                        </td>
-                        <td class="py-2 px-4 border text-center">{{ $shortUrl->hits }}</td>
-                        <td class="py-2 px-4 border">{{ $shortUrl->created_at->format('Y-m-d H:i') }}</td>
-                        <td class="py-2 px-4 border text-center">
-                            @if($shortUrl->expires)
-                                <span class="text-red-500">{{ \Carbon\Carbon::parse($shortUrl->expires)->diffForHumans() }}</span>
-                            @else
-                                <span>N/A</span>
-                            @endif
-                        </td>
-                        <td class="py-2 px-4 border text-center">
-                            <button class="clipboard" data-clipboard-text="{{ url("s/{$shortUrl->short_code}") }}">📋</button>
-                            <a href="{{ url("s/{$shortUrl->short_code}") }}" class="text-blue-600 hover:underline">Visit</a>
-                            <form action="{{ url("s/{$shortUrl->short_code}?force=1&_back=1") }}" method="POST" class="inline"
-                                onsubmit="return confirm('Are you sure you want to delete this short URL? This action cannot be undone.');"
-                            >
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:underline ml-2">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    @endif
 
-    <div class="mt-6 text-center">
-        Use with ShareX
+    <div class="mt-8 border-t border-white/10 pt-8">
+        <div class="panel-header">
+            <div>
+                <div class="panel-eyebrow">Library</div>
+                <h2>Your Shortened URLs</h2>
+                <p class="panel-subtitle">Copy, visit, and remove short links from one compact table.</p>
+            </div>
+        </div>
+    
+        @if($shortUrls->isEmpty())
+            <div class="surface-card text-center">
+                <p>You haven't created any short URLs yet.</p>
+            </div>
+        @else
+            <div class="table-shell">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Short Code</th>
+                            <th>Original URL</th>
+                            <th>Hits</th>
+                            <th>Created At</th>
+                            <th>Expires</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($shortUrls as $shortUrl)
+                            <tr>
+                                <td>
+                                    <a href="{{ url("s/{$shortUrl->short_code}") }}">
+                                        {{ $shortUrl->short_code }}
+                                    </a>
+                                </td>
+                                <td class="break-all">
+                                    <a href="{{ $shortUrl->url }}" target="_blank">
+                                        {{ $shortUrl->url }}
+                                    </a>
+                                </td>
+                                <td class="text-center">{{ $shortUrl->hits }}</td>
+                                <td>{{ $shortUrl->created_at->format('Y-m-d H:i') }}</td>
+                                <td class="text-center">
+                                    @if($shortUrl->expires)
+                                        <span class="status-pill status-pill--danger">{{ \Carbon\Carbon::parse($shortUrl->expires)->diffForHumans() }}</span>
+                                    @else
+                                        <span class="status-pill status-pill--muted">Never</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="flex flex-wrap justify-center gap-2">
+                                        <button class="clipboard btn-secondary btn-small" data-clipboard-text="{{ url("s/{$shortUrl->short_code}") }}">Copy</button>
+                                        <a href="{{ url("s/{$shortUrl->short_code}") }}" class="btn-secondary btn-small">Visit</a>
+                                        <form action="{{ url("s/{$shortUrl->short_code}?force=1&_back=1") }}" method="POST"
+                                            onsubmit="return confirm('Are you sure you want to delete this short URL? This action cannot be undone.');"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn-danger btn-small">Delete</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
+
+    <div class="mt-8 border-t border-white/10 pt-8">
+        <div class="panel-header mb-3">
+            <div>
+                <div class="panel-eyebrow">Automation</div>
+                <h2>Use with ShareX</h2>
+            </div>
+        </div>
         <pre class="codeblock">{
     "Version": "16.1.0",
     "Name": "Shup URL Shortener",

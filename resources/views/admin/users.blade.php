@@ -3,107 +3,118 @@
 @section('content')
 
 @php
-    $user = auth()->user();
-    
     $users = \App\Models\User::all();
 @endphp
 
-<div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
-    <h1 class="text-3xl font-bold mb-6 text-center">User settings</h1>
+<div class="app-panel">
+    <div class="panel-header">
+        <div>
+            <div class="panel-eyebrow">Admin console</div>
+            <h1 class="panel-title">User Settings</h1>
+            <p class="panel-subtitle">Manage signup access, anonymous uploads, invitations, and user roles.</p>
+        </div>
+    </div>
 
-    <form action="{{ route("configure") }}" method="POST">
+    <form action="{{ route("configure") }}" method="POST" class="surface-card">
         @csrf
         @method('POST')
-        <h2 class="text-xl font-bold mb-2">General</h2>
-        <div class="flex gap-8">
+        <h2 class="mb-4">General</h2>
+        <div class="form-grid">
             <div>
-                <label for="allow_signups" class="block text-gray-700 font-bold mb-2">Allow Signups</label>
+                <label for="allow_signup" class="field-label">Allow Signups</label>
                 @include('form-inputs.select-bool', [
-                    'name' => 'allow_signup', 'value' => App\Models\Configuration::getBool('allow_signup', false)
+                    'name' => 'allow_signup', 'id' => 'allow_signup', 'value' => App\Models\Configuration::getBool('allow_signup', false)
                 ])
             </div>
             <div>
-                <label for="allow_anonymous_upload" class="block text-gray-700 font-bold mb-2">Allow Anonymous Uploads</label>
+                <label for="allow_anonymous_upload" class="field-label">Allow Anonymous Uploads</label>
                 @include('form-inputs.select-bool', [
                     'name' => 'allow_anonymous_upload', 'value' => App\Models\Configuration::getBool('allow_anonymous_upload', false)
                 ])
             </div>
         </div>
-        <br>
-        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4">Save</button>
+        <button type="submit" class="btn-primary mt-4">Save Settings</button>
     </form>
 
-    <hr>
+    <div class="my-8 border-t border-white/10"></div>
     
-    <h2 class="text-xl font-bold mb-2">Users</h2>
+    <div class="panel-header">
+        <div>
+            <div class="panel-eyebrow">Accounts</div>
+            <h2>Users</h2>
+            <p class="panel-subtitle">Invite new users and update account details.</p>
+        </div>
+    </div>
 
     @if (session('invite_info'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-            <span class="block sm:inline">{{ session('invite_info') }}</span>
+        <div class="alert-success mb-4" role="alert">
+            {{ session('invite_info') }}
         </div>
     @endif
-    <form action="{{ route("inviteUser") }}?_back=1" method="POST">
+
+    <form action="{{ route("inviteUser") }}?_back=1" method="POST" class="surface-card mb-6">
         @csrf
         @method('POST')
 
-        <label for="email" class="block text-gray-700 font-bold">Invite User</label>
-        <input type="email" name="email" placeholder="Email" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
-        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-1">Invite User</button>
+        <label for="email" class="field-label">Invite User</label>
+        <div class="form-row">
+            <input type="email" id="email" name="email" placeholder="Email" required>
+            <button type="submit" class="btn-primary">Invite User</button>
+        </div>
     </form>
     
-    <table class="w-full table-auto border-collapse">
-        <thead>
-            <tr class="bg-gray-200 text-gray-700">
-                <th class="py-2 px-4 border">ID</th>
-                <th class="py-2 px-4 border">Name</th>
-                <th class="py-2 px-4 border">Email</th>
-                <th class="py-2 px-4 border">Role</th>
-                <th class="py-2 px-4 border"></th>
-                <th class="py-2 px-4 border"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($users as $user)
-                <tr class="text-gray-600">
-                    <form action="{{ url("user/$user->id?_back=1") }}" method="POST">
-                        @csrf
-                        @method('PUT')
-
-                        <!-- Unnecessary -->
-                        <!-- <input type="hidden" name="id" value="{{ $user->id }}"> -->
-
-                        <td class="py-2 px-4 border">{{ $user->id }}</td>
-                        <td class="py-2 px-4 border">
-                            <input name="name" value="{{ $user->name }}">
-                        </td>
-                        <td class="py-2 px-4 border">
-                            <input name="email" value="{{ $user->email }}">
-                        </td>
-                        <td class="py-2 px-4 border text-center">
-                            @if ($user->id !== auth()->id())
-                                <select name="role" id="role" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
-                                    @foreach(\App\Models\User::$roles as $key => $role)
-                                        <option value="{{ $key }}" @if($user->role === $key) selected @endif>{{ $role }}</option>
-                                    @endforeach
-                                </select>
-                            @else
-                                <span title="Cannot update your own role">{{ $user->getRoleName() }}</span>
-                            @endif
-                        </td>
-                        <td class="py-2 px-4 border text-center">
-                            <button type="submit" class="text-green-600 hover:underline ml-2">Save</button>
-                        </td>
-                    </form>
-                    <td class="py-2 px-4 border text-center">
-                        <form action="{{ url("user/$user->id?_back=1") }}" method="POST" class="inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:underline ml-2">Delete</button>
-                        </form>
-                    </td>
+    <div class="table-shell">
+        <table class="data-table min-w-[920px]">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th class="text-center">Save</th>
+                    <th class="text-center">Delete</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach($users as $listedUser)
+                    <tr>
+                        <form action="{{ url("user/$listedUser->id?_back=1") }}" method="POST">
+                            @csrf
+                            @method('PUT')
+
+                            <td>{{ $listedUser->id }}</td>
+                            <td>
+                                <input name="name" value="{{ $listedUser->name }}">
+                            </td>
+                            <td>
+                                <input name="email" value="{{ $listedUser->email }}">
+                            </td>
+                            <td class="text-center">
+                                @if ($listedUser->id !== auth()->id())
+                                    <select name="role" id="role-{{ $listedUser->id }}">
+                                        @foreach(\App\Models\User::$roles as $key => $role)
+                                            <option value="{{ $key }}" @if($listedUser->role === $key) selected @endif>{{ $role }}</option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    <span class="status-pill status-pill--muted" title="Cannot update your own role">{{ $listedUser->getRoleName() }}</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <button type="submit" class="btn-secondary btn-small">Save</button>
+                            </td>
+                        </form>
+                        <td class="text-center">
+                            <form action="{{ url("user/$listedUser->id?_back=1") }}" method="POST" onsubmit="return confirm('Delete this user?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-danger btn-small">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
 </div>
 @endsection

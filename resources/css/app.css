@@ -2,65 +2,630 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Centralized Custom Styles */
-
-/* General Container Style */
-.container-standard {
-    @apply container mx-auto px-4;
+:root {
+    color-scheme: dark;
+    --bg: #050608;
+    --bg-soft: #0a0d10;
+    --surface: rgba(15, 18, 23, 0.86);
+    --surface-strong: rgba(21, 26, 32, 0.92);
+    --surface-muted: rgba(255, 255, 255, 0.055);
+    --stroke: rgba(255, 255, 255, 0.11);
+    --stroke-strong: rgba(255, 255, 255, 0.18);
+    --text: #f3f7fb;
+    --text-soft: #c6d0dc;
+    --muted: #8c98a8;
+    --accent: #39e7d3;
+    --accent-strong: #72f06d;
+    --warning: #f7c948;
+    --danger: #ff6b6b;
+    --success: #72f06d;
 }
 
-/* Header Style */
+html {
+    min-height: 100%;
+    background: var(--bg);
+}
+
+body {
+    @apply font-sans leading-normal antialiased;
+    min-height: 100vh;
+    color: var(--text);
+    background:
+        linear-gradient(135deg, rgba(57, 231, 211, 0.12), transparent 34%),
+        linear-gradient(215deg, rgba(114, 240, 109, 0.08), transparent 42%),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 118px),
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0, rgba(255, 255, 255, 0.018) 1px, transparent 1px, transparent 118px),
+        var(--bg);
+    background-attachment: fixed;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button,
+a {
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, opacity 160ms ease;
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+}
+
+::selection {
+    color: #04110f;
+    background: var(--accent);
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.container-standard {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
 .header {
-    @apply bg-white shadow py-4;
+    @apply sticky top-0 z-40 border-b py-3;
+    background: rgba(5, 6, 8, 0.82);
+    border-color: var(--stroke);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
 }
 
 .header-logo {
-    @apply text-2xl font-bold text-blue-600;
+    @apply inline-flex items-center gap-3 text-lg font-semibold sm:text-xl;
+    color: var(--text);
+}
+
+.header-logo-mark {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black;
+    color: #04110f;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    box-shadow: 0 0 30px rgba(57, 231, 211, 0.22);
+}
+
+.header-logo-text {
+    @apply hidden sm:inline;
+}
+
+.nav-actions {
+    @apply flex items-center justify-end gap-2 sm:gap-3;
+}
+
+@media (max-width: 767px) {
+    .nav-actions .nav-optional {
+        display: none;
+    }
 }
 
 .nav-link {
-    @apply text-gray-700 hover:text-blue-600;
+    color: var(--text-soft);
 }
 
-/* Auth Button Styles */
+.nav-link:hover {
+    color: var(--accent);
+}
+
 .auth-button {
-    @apply text-gray-700;
+    @apply inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm font-medium;
+    min-height: 2.35rem;
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.055);
+    border-color: var(--stroke);
 }
 
 .auth-button:hover {
-    @apply hover:text-blue-600;
+    color: var(--text);
+    background: rgba(57, 231, 211, 0.1);
+    border-color: rgba(57, 231, 211, 0.35);
+}
+
+.user-profile-menu-button {
+    @apply relative inline-flex items-center justify-center;
+    color: #04110f;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    border-color: rgba(255, 255, 255, 0.38);
+    box-shadow: 0 0 24px rgba(57, 231, 211, 0.18);
+}
+
+.user-profile-menu-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 34px rgba(57, 231, 211, 0.28);
+}
+
+.user-profile-menu-button span {
+    @apply text-sm font-black;
+}
+
+.user-profile-menu-button img {
+    @apply absolute inset-0;
 }
 
 .logout-button {
-    @apply text-gray-700 hover:text-red-600;
+    color: var(--text-soft);
 }
 
-/* Main Content Area */
+.logout-button:hover {
+    color: var(--danger);
+}
+
 .main-content {
-    @apply py-8;
+    @apply py-8 sm:py-10;
+    min-height: calc(100vh - 9.5rem);
 }
 
-/* Footer Style */
 .footer {
-    @apply bg-white border-t py-4 mt-12 text-center text-gray-600;
+    @apply border-t py-5 text-center text-sm;
+    color: var(--muted);
+    border-color: var(--stroke);
+    background: rgba(5, 6, 8, 0.7);
+}
+
+.app-panel {
+    @apply mx-auto w-full max-w-6xl rounded-lg p-5 shadow-2xl sm:p-6 lg:p-8;
+    color: var(--text);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.032)),
+        var(--surface);
+    border: 1px solid var(--stroke);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.app-panel--narrow {
+    @apply max-w-md;
+}
+
+.app-panel--compact {
+    @apply max-w-xl;
+}
+
+.panel-header {
+    @apply mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between;
+}
+
+.panel-eyebrow {
+    @apply text-xs font-semibold uppercase;
+    color: var(--accent);
+}
+
+.panel-title,
+.app-panel h1 {
+    @apply text-2xl font-semibold sm:text-3xl;
+    color: var(--text);
+    text-align: left;
+}
+
+.app-panel h2 {
+    @apply text-xl font-semibold;
+    color: var(--text);
+    text-align: left;
+}
+
+.panel-subtitle,
+.app-panel p,
+.muted-text {
+    color: var(--muted);
+}
+
+.auth-card h2,
+.public-card h1 {
+    text-align: center;
+}
+
+.surface-card,
+.stat-card {
+    @apply rounded-lg border p-4 sm:p-5;
+    background: var(--surface-muted);
+    border-color: var(--stroke);
+}
+
+.surface-card:hover,
+.stat-card:hover {
+    background: rgba(255, 255, 255, 0.075);
+    border-color: rgba(57, 231, 211, 0.28);
+}
+
+.stat-card {
+    @apply flex min-h-40 flex-col justify-between gap-4;
+}
+
+.stat-value {
+    @apply text-4xl font-semibold;
+    color: var(--text);
+}
+
+.stat-label {
+    @apply text-sm;
+    color: var(--muted);
+}
+
+.storage-meter {
+    @apply mt-4 h-3 overflow-hidden rounded-md;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--stroke);
+}
+
+.storage-meter__bar {
+    @apply h-full rounded-md;
+    background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+    box-shadow: 0 0 22px rgba(57, 231, 211, 0.28);
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-ghost {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold;
+    min-height: 2.5rem;
+    border: 1px solid transparent;
+}
+
+.btn-primary {
+    color: #04110f;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    box-shadow: 0 14px 34px rgba(57, 231, 211, 0.18);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 38px rgba(57, 231, 211, 0.26);
+}
+
+.btn-secondary {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.075);
+    border-color: var(--stroke);
+}
+
+.btn-secondary:hover,
+.btn-ghost:hover {
+    background: rgba(57, 231, 211, 0.1);
+    border-color: rgba(57, 231, 211, 0.34);
+}
+
+.btn-danger {
+    color: #fff5f5;
+    background: rgba(255, 107, 107, 0.14);
+    border-color: rgba(255, 107, 107, 0.32);
+}
+
+.btn-danger:hover {
+    background: rgba(255, 107, 107, 0.22);
+}
+
+.btn-ghost {
+    color: var(--text-soft);
+    background: transparent;
+    border-color: transparent;
+}
+
+.btn-small {
+    @apply px-3 py-1.5 text-xs;
+    min-height: 2rem;
+}
+
+.app-link,
+.app-panel a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-ghost),
+.public-card a {
+    color: var(--accent);
+}
+
+.app-link:hover,
+.app-panel a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-ghost):hover,
+.public-card a:hover {
+    color: var(--accent-strong);
+}
+
+.form-stack {
+    @apply space-y-4;
+}
+
+.form-grid {
+    @apply grid gap-4 md:grid-cols-2;
+}
+
+.form-row {
+    @apply grid gap-3 md:grid-cols-[1fr_auto] md:items-stretch;
+}
+
+.field-label,
+.app-panel label,
+.public-card label {
+    @apply mb-2 block text-sm font-medium;
+    color: var(--text-soft);
+}
+
+.input-field,
+.form-select,
+.app-panel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.app-panel textarea,
+.app-panel select,
+.public-card input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.public-card textarea,
+.public-card select {
+    @apply w-full rounded-md px-3 py-2 text-sm outline-none;
+    color: var(--text);
+    background: rgba(5, 6, 8, 0.54);
+    border: 1px solid var(--stroke-strong);
+}
+
+.app-panel textarea,
+.public-card textarea {
+    min-height: 8rem;
+    resize: vertical;
+}
+
+.input-field::placeholder,
+.app-panel input::placeholder,
+.app-panel textarea::placeholder,
+.public-card input::placeholder,
+.public-card textarea::placeholder {
+    color: rgba(198, 208, 220, 0.56);
+}
+
+.input-field:focus,
+.form-select:focus,
+.app-panel input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):focus,
+.app-panel textarea:focus,
+.app-panel select:focus,
+.public-card input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):focus,
+.public-card textarea:focus,
+.public-card select:focus {
+    border-color: rgba(57, 231, 211, 0.58);
+    box-shadow: 0 0 0 4px rgba(57, 231, 211, 0.12);
+}
+
+input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--accent);
+}
+
+input[type="file"] {
+    cursor: pointer;
+    color: var(--muted);
+}
+
+input[type="file"]::file-selector-button {
+    @apply mr-3 rounded-md border-0 px-3 py-2 text-sm font-semibold;
+    color: #04110f;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    cursor: pointer;
+}
+
+.helper-text {
+    @apply mt-2 text-xs;
+    color: var(--muted);
+}
+
+.table-shell {
+    @apply mt-4 overflow-x-auto rounded-lg;
+    background: rgba(5, 6, 8, 0.35);
+    border: 1px solid var(--stroke);
+}
+
+.app-panel table,
+.data-table {
+    @apply w-full min-w-[760px] border-collapse text-sm;
+}
+
+.app-panel thead tr,
+.data-table thead tr {
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.app-panel th,
+.data-table th {
+    @apply px-4 py-3 text-left font-semibold;
+    border-color: var(--stroke);
+}
+
+.app-panel td,
+.data-table td {
+    @apply px-4 py-3 align-middle;
+    color: var(--text-soft);
+    border-color: var(--stroke);
+}
+
+.app-panel tbody tr,
+.data-table tbody tr {
+    background: rgba(255, 255, 255, 0.018);
+}
+
+.app-panel tbody tr:hover,
+.data-table tbody tr:hover {
+    background: rgba(57, 231, 211, 0.055);
+}
+
+.app-panel th.border,
+.app-panel td.border,
+.data-table th.border,
+.data-table td.border {
+    border-color: var(--stroke);
+}
+
+.app-panel .text-gray-400,
+.app-panel .text-gray-500,
+.app-panel .text-gray-600,
+.app-panel .text-gray-700,
+.public-card .text-gray-400,
+.public-card .text-gray-500,
+.public-card .text-gray-600,
+.public-card .text-gray-700,
+.public-card .text-gray-800 {
+    color: var(--muted);
+}
+
+.app-panel .text-blue-500,
+.app-panel .text-blue-600,
+.public-card .text-blue-500,
+.public-card .text-blue-600 {
+    color: var(--accent);
+}
+
+.app-panel .text-green-600 {
+    color: var(--success);
+}
+
+.app-panel .text-red-500,
+.app-panel .text-red-600,
+.public-card .text-red-500,
+.public-card .text-red-600 {
+    color: var(--danger);
+}
+
+.status-pill {
+    @apply inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold;
+    border: 1px solid transparent;
+}
+
+.status-pill--active {
+    color: #04110f;
+    background: var(--success);
+}
+
+.status-pill--muted {
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--stroke);
+}
+
+.status-pill--danger {
+    color: #fff5f5;
+    background: rgba(255, 107, 107, 0.18);
+    border-color: rgba(255, 107, 107, 0.32);
+}
+
+.alert-success,
+.alert-error,
+.alert-warning,
+.alert-info,
+.app-panel [role="alert"],
+.public-card [role="alert"] {
+    @apply rounded-lg px-4 py-3 text-sm;
+    border: 1px solid var(--stroke);
+}
+
+.alert-success,
+.app-panel .bg-green-100[role="alert"],
+.public-card .bg-green-100[role="alert"] {
+    color: #d9ffe0;
+    background: rgba(114, 240, 109, 0.12);
+    border-color: rgba(114, 240, 109, 0.28);
+}
+
+.alert-error,
+.app-panel .bg-red-100[role="alert"],
+.public-card .bg-red-100[role="alert"] {
+    color: #ffe0e0;
+    background: rgba(255, 107, 107, 0.12);
+    border-color: rgba(255, 107, 107, 0.28);
+}
+
+.alert-warning,
+.public-card .bg-yellow-50 {
+    color: #fff4bd;
+    background: rgba(247, 201, 72, 0.12);
+    border-color: rgba(247, 201, 72, 0.28);
+}
+
+.alert-info,
+.public-card .bg-blue-50 {
+    color: #d8fffb;
+    background: rgba(57, 231, 211, 0.1);
+    border-color: rgba(57, 231, 211, 0.28);
 }
 
 .codeblock {
-    @apply block bg-gray-100 p-4 my-4 text-left whitespace-pre-wrap;
+    @apply my-4 block overflow-x-auto rounded-lg p-4 text-left text-sm whitespace-pre-wrap;
+    color: #c9fff1;
+    background: #07090c;
+    border: 1px solid var(--stroke);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .user-profile-menu {
-    @apply absolute flex flex-col bg-white border-gray-200 border-2;
+    @apply fixed z-50 flex min-w-44 flex-col overflow-hidden rounded-lg border p-1;
+    background: rgba(13, 16, 21, 0.96);
+    border-color: var(--stroke-strong);
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.48);
+    backdrop-filter: blur(18px);
 }
 
 .user-profile-menu--item {
-    @apply py-3 px-4 bg-gray-200;
+    @apply rounded-md px-3 py-2 text-sm;
+    color: var(--text-soft);
+    background: transparent;
 }
 
 a.user-profile-menu--item {
-    @apply bg-white hover:bg-gray-300;
+    color: var(--text);
 }
 
-.form-select {
-    @apply bg-white px-2 py-1 outline-none border border-gray-300 rounded;
+a.user-profile-menu--item:hover {
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+div.user-profile-menu--item {
+    color: var(--muted);
+}
+
+.copy-feedback {
+    @apply rounded-md px-3 py-1.5 text-xs font-semibold;
+    color: #04110f;
+    background: var(--accent);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.public-shell {
+    @apply flex min-h-screen items-center justify-center px-4 py-10;
+    color: var(--text);
+}
+
+.public-card {
+    @apply w-full max-w-md rounded-lg p-6 shadow-2xl sm:p-8;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035)),
+        var(--surface);
+    border: 1px solid var(--stroke);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.public-brand {
+    @apply mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg text-lg font-black;
+    color: #04110f;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+#progress-container .bg-gray-200,
+.progress-track {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--stroke);
+}
+
+#progress-bar,
+.progress-bar {
+    background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+}
+
+.file-preview {
+    @apply rounded-md border p-1;
+    background: rgba(5, 6, 8, 0.45);
+    border-color: var(--stroke);
+}
+
+hr {
+    border-color: var(--stroke);
 }

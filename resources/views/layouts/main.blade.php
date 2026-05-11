@@ -7,80 +7,61 @@
     <title>{{ $title ?? env("APP_NAME") }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+<body>
 
-    <!-- Header -->
     <header class="header">
         <div class="container-standard flex justify-between items-center">
             <a href="{{ url('/') }}" class="header-logo">
-                {{ env("APP_NAME") }}
+                <span class="header-logo-mark">S</span>
+                <span class="header-logo-text">{{ env("APP_NAME") }}</span>
             </a>
-            <!-- <nav class="space-x-4">
-                <a href="{{ url('/file-uploader') }}" class="nav-link">File Uploader</a>
-                <a href="{{ url('/url-shortener') }}" class="nav-link">URL Shortener</a>
-                <a href="{{ url('/paste-bin') }}" class="nav-link">Paste Bin</a>
-            </nav> -->
-            <div class="flex justify-center items-center gap-4">
+            <div class="nav-actions">
                 @auth
                     @php
                         $user = auth()->user();
+                        $avatarInitial = strtoupper(substr($user->name ?: $user->email ?: env("APP_NAME"), 0, 1));
                     @endphp
                     @if ($user->isAdmin())
                         <a href="{{ url('/admin/users') }}" class="auth-button">Admin</a>
                     @endif
+                    <a href="{{ route('files') }}" class="auth-button nav-optional">Files</a>
+                    <a href="{{ route('uploadlinks') }}" class="auth-button nav-optional">Upload Links</a>
                     <a href="{{ url('/dashboard') }}" class="auth-button">Dashboard</a>
-                    
-                    <!-- <a href="{{ route('logout') }}" class="logout-button">Logout</a> -->
-                    <div
-                        class="
-                            user-profile-menu-button
-                            w-10
-                            h-10
-                            rounded-xl
-                            overflow-hidden
-                            cursor-pointer
-                            border
-                            border-gray-200
-                        "
+                    <button
+                        type="button"
+                        class="user-profile-menu-button h-10 w-10 overflow-hidden rounded-lg border"
+                        aria-label="Open profile menu"
                         onclick="openUserMenu(event)"
                     >
-                        <img
-                            src="{{ Auth::user()->image }}"
-                            class="object-cover w-full h-full pointer-events-none"
-                        >
-                    </div>
+                        <span>{{ $avatarInitial }}</span>
+                        @if ($user->image)
+                            <img
+                                src="{{ $user->image }}"
+                                class="object-cover w-full h-full pointer-events-none"
+                                onerror="this.remove()"
+                            >
+                        @endif
+                    </button>
 
                     <script>
-                        /**
-                         * @param element {HTMLElement}
-                         * @param parent {HTMLElement}
-                         */
-                        function isParentTo(element, parent) {
-                            let i = 0;
-                            let toCheck = element;
-                            while (toCheck) {
-                                console.log(toCheck, parent, toCheck === parent);
-                                if (toCheck === parent) return true;
-                                i++;
+                        function positionUserMenu(menu, anchor) {
+                            const anchorBox = anchor.getBoundingClientRect();
+                            const menuBox = menu.getBoundingClientRect();
+                            const left = Math.min(
+                                window.innerWidth - menuBox.width - 12,
+                                Math.max(12, anchorBox.right - menuBox.width)
+                            );
 
-                                toCheck = toCheck.parentElement;
-
-                                if (i > 100) { // Failsafe
-                                    return false;
-                                }
-                            }
-
-                            return false;
+                            menu.style.left = `${left}px`;
+                            menu.style.top = `${anchorBox.bottom + 8}px`;
                         }
                         
-                        /** @param event {MouseEvent} */
                         function openUserMenu(event) {
-                            /** @type {HTMLElement} */
+                            event.stopPropagation();
                             const element = event.currentTarget;
-                            console.log("Open", element);
+                            document.querySelectorAll(".user-profile-menu").forEach(menu => menu.remove());
 
                             const div = document.createElement("div");
-                            
                             const list = [
                                 {
                                     label: "{{ $user->getRoleName() }}",
@@ -97,7 +78,6 @@
 
                             div.classList.add("user-profile-menu");
 
-                            
                             for (let i = 0; i < list.length; i++) {
                                 const item = list[i];
                                 const a = document.createElement(item.url ? "a" : "div");
@@ -110,40 +90,36 @@
                                 div.appendChild(a);
                             }
 
-                            const box = element.getBoundingClientRect();
-                            
-                            div.style.left = `${box.left - box.width}px`;
-                            div.style.top = `${box.bottom}px`;
+                            const close = () => {
+                                div.remove();
+                                window.removeEventListener("click", onClick);
+                                window.removeEventListener("resize", onResize);
+                                window.removeEventListener("keydown", onKeydown);
+                            };
 
-                            /** @param e {MouseEvent} */
-                            const handler = e => {
-                                console.log(e.target);
-                                
-                                if (isParentTo(e.target, div)) {
+                            const onClick = e => {
+                                if (div.contains(e.target) || element.contains(e.target)) {
                                     return;
                                 }
                                 
-                                div.remove();
-                                window.removeEventListener("click", handler);
-                                window.removeEventListener("resize", onResize);
+                                close();
                             };
 
-                            /** @param e {MouseEvent} */
-                            const onResize = e => {
-                                const box = element.getBoundingClientRect();
-                                div.style.left = `${box.left - box.width}px`;
-                                div.style.top = `${box.bottom}px`;
+                            const onResize = () => positionUserMenu(div, element);
+                            const onKeydown = e => {
+                                if (e.key === "Escape") {
+                                    close();
+                                }
                             };
                             
                             document.body.appendChild(div);
-                            setTimeout(() => {
-                                window.addEventListener("click", handler);
-                                window.addEventListener("resize", onResize);
-                            }, 0);
-                        }
+                            positionUserMenu(div, element);
 
-                        function closeUserMenu() {
-                            console.log("Close");
+                            setTimeout(() => {
+                                window.addEventListener("click", onClick);
+                                window.addEventListener("resize", onResize);
+                                window.addEventListener("keydown", onKeydown);
+                            }, 0);
                         }
                     </script>
                 @else
@@ -153,12 +129,10 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="container-standard main-content">
         @yield('content')
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
         Powered by {{ env("APP_NAME") }}
     </footer>

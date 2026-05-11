@@ -4,43 +4,77 @@
 
 @php
     $user = auth()->user();
-    $users = \App\Models\File::where('user_id', $user->id)->count();
+    $filesCount = \App\Models\File::where('user_id', $user->id)->count();
     $urlsCount = \App\Models\ShortURL::where('user_id', $user->id)->count();
     $pasteBinsCount = \App\Models\PasteBin::where('user_id', $user->id)->count();
     $uploadLinksCount = \App\Models\UploadLink::where('user_id', $user->id)->count();
+    $storageLimit = $user->storage_limit;
+    $storageUsedLabel = \App\Models\File::reduceFileSize($user->storage_used);
+    $storageLimitLabel = $storageLimit === 0 ? "Unlimited" : \App\Models\File::reduceFileSize($storageLimit);
+    $storagePercent = $storageLimit > 0 ? min(100, round(($user->storage_used / $storageLimit) * 100)) : 100;
 @endphp
 
-<div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
-    <h1 class="text-3xl font-bold mb-6 text-center">Your Dashboard</h1>
-    <p>
-        Welcome back, {{ $user->name }}!
-        <br>
-        You have used {{ \App\Models\File::reduceFileSize($user->storage_used) }} / {{ $user->storage_limit === 0 ? "∞" : \App\Models\File::reduceFileSize($user->storage_limit) }} of your storage.
-        <br>
-        <br>
-        Need to reset your API key?
-        <a href="{{ route('resetapi') }}" class="text-blue-600 hover:underline">Reset API Key here</a>.
-    </p>
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-gray-200 p-4 rounded">
-            <h2 class="text-xl font-bold mb-2">Your Uploaded Files</h2>
-            <p class="text-gray-700">You have uploaded {{ $users }} files.</p>
-            <a href="{{ route('files') }}" class="text-blue-600 hover:underline">View Files</a>
+<div class="app-panel">
+    <div class="panel-header">
+        <div>
+            <div class="panel-eyebrow">Command center</div>
+            <h1 class="panel-title">Your Dashboard</h1>
+            <p class="panel-subtitle">Welcome back, {{ $user->name }}. Your files, links, and snippets are ready when you are.</p>
         </div>
-        <div class="bg-gray-200 p-4 rounded">
-            <h2 class="text-xl font-bold mb-2">Your Shortened URLs</h2>
-            <p class="text-gray-700">You have shortened {{ $urlsCount }} URLs.</p>
-            <a href="{{ route('shorturls') }}" class="text-blue-600 hover:underline">View URLs</a>
+        <a href="{{ route('resetapi') }}" class="btn-secondary">Reset API Key</a>
+    </div>
+
+    <div class="surface-card mb-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm font-semibold text-white">Storage</p>
+                <p class="helper-text">{{ $storageUsedLabel }} used of {{ $storageLimitLabel }}</p>
+            </div>
+            <div class="text-sm font-semibold" style="color: var(--accent);">
+                {{ $storageLimit === 0 ? "Unlimited" : $storagePercent . "%" }}
+            </div>
         </div>
-        <div class="bg-gray-200 p-4 rounded">
-            <h2 class="text-xl font-bold mb-2">Your Paste Bins</h2>
-            <p class="text-gray-700">You have created {{ $pasteBinsCount }} paste bins.</p>
-            <a href="{{ route('pastes') }}" class="text-blue-600 hover:underline">View Paste Bins</a>
+        <div class="storage-meter">
+            <div class="storage-meter__bar" style="width: {{ $storagePercent }}%"></div>
         </div>
-        <div class="bg-gray-200 p-4 rounded">
-            <h2 class="text-xl font-bold mb-2">Upload Links</h2>
-            <p class="text-gray-700">You have created {{ $uploadLinksCount }} upload links.</p>
-            <a href="{{ route('uploadlinks') }}" class="text-blue-600 hover:underline">Manage Links</a>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="stat-card">
+            <div>
+                <p class="stat-label">Files</p>
+                <div class="stat-value">{{ $filesCount }}</div>
+                <h2 class="mt-3">Uploaded Files</h2>
+                <p class="mt-2 text-sm">Encrypted storage, expiring files, and protected downloads.</p>
+            </div>
+            <a href="{{ route('files') }}" class="btn-secondary">Open Files</a>
+        </div>
+        <div class="stat-card">
+            <div>
+                <p class="stat-label">URLs</p>
+                <div class="stat-value">{{ $urlsCount }}</div>
+                <h2 class="mt-3">Short Links</h2>
+                <p class="mt-2 text-sm">Compact redirects with hit tracking.</p>
+            </div>
+            <a href="{{ route('shorturls') }}" class="btn-secondary">Open URLs</a>
+        </div>
+        <div class="stat-card">
+            <div>
+                <p class="stat-label">Pastes</p>
+                <div class="stat-value">{{ $pasteBinsCount }}</div>
+                <h2 class="mt-3">Paste Bins</h2>
+                <p class="mt-2 text-sm">Text snippets with optional protection.</p>
+            </div>
+            <a href="{{ route('pastes') }}" class="btn-secondary">Open Pastes</a>
+        </div>
+        <div class="stat-card">
+            <div>
+                <p class="stat-label">Upload Links</p>
+                <div class="stat-value">{{ $uploadLinksCount }}</div>
+                <h2 class="mt-3">Guest Uploads</h2>
+                <p class="mt-2 text-sm">One-time links for collecting files into your account.</p>
+            </div>
+            <a href="{{ route('uploadlinks') }}" class="btn-secondary">Manage Links</a>
         </div>
     </div>
 </div>

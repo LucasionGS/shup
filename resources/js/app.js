@@ -8,7 +8,7 @@ window.addEventListener('load', () => {
   copyToClipboardElements.forEach((element) => {
     element.addEventListener('click', (event) => {
       event.preventDefault();
-      const text = event.target.getAttribute('data-clipboard-text');
+      const text = element.getAttribute('data-clipboard-text');
       if (navigator.clipboard) {
         navigator.clipboard.writeText(text);
       }
@@ -22,7 +22,8 @@ window.addEventListener('load', () => {
       }
 
       const floatingElement = document.createElement('div');
-      floatingElement.innerText = element.innerText;
+      floatingElement.classList.add('copy-feedback');
+      floatingElement.innerText = 'Copied';
       floatingElement.style.pointerEvents = 'none';
       floatingElement.style.position = 'absolute';
       floatingElement.style.top = `${event.clientY}px`;

@@ -7,24 +7,28 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
-    <div class="flex justify-center mt-4">
-        <form class="flex flex-col p-2 bg-gray-200 rounded-lg" autocomplete="off">
-            <label for="password">Password</label>
-            <input
-                autofocus
-                class="border border-gray-300 p-2"
-                type="password" name="pwd" id="pwd"
-                autocomplete="off"
-                required
-            >
+    <main class="public-shell">
+        <form class="public-card form-stack" autocomplete="off">
+            <div class="public-brand">S</div>
+            <h1 class="text-2xl font-semibold text-center">Password Required</h1>
+            <p class="panel-subtitle text-center">Enter the password to unlock this protected Shup item.</p>
+
+            <div>
+                <label for="pwd" class="field-label">Password</label>
+                <input
+                    autofocus
+                    type="password" name="pwd" id="pwd"
+                    autocomplete="off"
+                    required
+                >
+            </div>
+
             @error('pwd')
-                <div class="text-red-500">{{ $message }}</div>
+                <div class="alert-error">{{ $message }}</div>
             @enderror
-            <button
-                class="bg-blue-500 text-white p-2 mt-2 rounded-lg"
-                type="submit"
-            >Submit</button>
+
+            <button class="btn-primary w-full" type="submit">Submit</button>
         </form>
-    </div>
+    </main>
 </body>
 </html>

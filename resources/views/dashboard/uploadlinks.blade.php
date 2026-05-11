@@ -10,33 +10,33 @@
         ->get();
 @endphp
 
-<div class="max-w-6xl mx-auto bg-white shadow-md rounded px-8 py-10">
-    <h1 class="text-3xl font-bold mb-6 text-center">Generate Upload Link</h1>
-    <p class="text-gray-600 mb-6 text-center">
-        Create a one-time use link that allows someone to upload a file to your account.
-    </p>
+<div class="app-panel">
+    <div class="panel-header">
+        <div>
+            <div class="panel-eyebrow">Guest intake</div>
+            <h1 class="panel-title">Generate Upload Link</h1>
+            <p class="panel-subtitle">Create a one-time link that lets someone upload a file directly into your account.</p>
+        </div>
+    </div>
     
-    <form action="{{ url('ul') }}?_back=1" method="POST" class="mt-6">
+    <form action="{{ url('ul') }}?_back=1" method="POST" class="surface-card">
         @csrf
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
-                <label for="expires" class="block text-sm font-medium text-gray-700 mb-2">
-                    Expiration (minutes, optional)
-                </label>
+                <label for="expires" class="field-label">Expiration (minutes, optional)</label>
                 <input 
                     type="number" 
                     name="expires" 
                     id="expires"
                     min="0"
                     placeholder="Leave empty for no expiration"
-                    class="w-full py-2 px-4 border rounded focus:ring-2 focus:ring-blue-500"
                 >
-                <p class="text-xs text-gray-500 mt-1">Link will expire after this many minutes or after one upload</p>
+                <p class="helper-text">Link will expire after this many minutes or after one upload.</p>
             </div>
             <div class="flex items-end">
                 <button 
                     type="submit" 
-                    class="py-2 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded w-full md:w-auto transition duration-200"
+                    class="btn-primary w-full md:w-auto"
                 >
                     Generate Link
                 </button>
@@ -45,107 +45,110 @@
     </form>
 
     @if (session('upload_link'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-6" role="alert">
-            <span class="block sm:inline font-semibold mb-2">Upload link created!</span>
+        <div class="alert-success mt-6" role="alert">
+            <div class="font-semibold">Upload link created</div>
             <div class="flex items-center gap-2 mt-2">
                 <input 
                     type="text" 
                     value="{{ session('upload_link') }}" 
                     readonly 
-                    class="flex-1 py-2 px-4 border rounded bg-white"
+                    class="flex-1"
                 >
                 <button 
-                    class="clipboard py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded transition duration-200" 
+                    class="clipboard btn-secondary" 
                     data-clipboard-text="{{ session('upload_link') }}"
                 >
-                    📋 Copy
+                    Copy
                 </button>
             </div>
         </div>
     @endif
 
-    <hr class="my-8">
+    <div class="my-8 border-t border-white/10"></div>
 
-    <h2 class="text-2xl font-bold mb-6 text-center">Your Upload Links</h2>
+    <div class="panel-header">
+        <div>
+            <div class="panel-eyebrow">One-time links</div>
+            <h2>Your Upload Links</h2>
+            <p class="panel-subtitle">Track active, used, and expired intake links.</p>
+        </div>
+    </div>
     
     @if($links->isEmpty())
-        <p class="text-gray-700 text-center">You haven't created any upload links yet.</p>
+        <div class="surface-card text-center">
+            <p>You haven't created any upload links yet.</p>
+        </div>
     @else
-        <div class="overflow-x-auto">
-            <table class="w-full table-auto border-collapse">
+        <div class="table-shell">
+            <table class="data-table">
                 <thead>
-                    <tr class="bg-gray-200 text-gray-700">
-                        <th class="py-2 px-4 border text-left">Link</th>
-                        <th class="py-2 px-4 border text-left">Status</th>
-                        <th class="py-2 px-4 border text-left">Created</th>
-                        <th class="py-2 px-4 border text-left">Expires</th>
-                        <th class="py-2 px-4 border text-center">Actions</th>
+                    <tr>
+                        <th>Link</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Expires</th>
+                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($links as $link)
-                        <tr class="hover:bg-gray-50 {{ $link->isValid() ? '' : 'opacity-50' }}">
-                            <td class="py-2 px-4 border">
-                                <div class="flex items-center gap-2">
-                                    <code class="bg-gray-100 px-2 py-1 rounded text-sm">
+                        <tr class="{{ $link->isValid() ? '' : 'opacity-60' }}">
+                            <td>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <code class="rounded-md border border-white/10 bg-black/20 px-2 py-1 text-sm break-all">
                                         {{ url('/ul/' . $link->short_code) }}
                                     </code>
                                     @if($link->isValid())
                                         <button 
-                                            class="clipboard text-blue-500 hover:text-blue-700" 
+                                            class="clipboard btn-secondary btn-small" 
                                             data-clipboard-text="{{ url('/ul/' . $link->short_code) }}"
                                             title="Copy to clipboard"
                                         >
-                                            📋
+                                            Copy
                                         </button>
                                     @endif
                                 </div>
                             </td>
-                            <td class="py-2 px-4 border">
+                            <td>
                                 @if($link->used)
-                                    <span class="inline-block bg-gray-500 text-white text-xs px-2 py-1 rounded">Used</span>
+                                    <span class="status-pill status-pill--muted">Used</span>
                                 @elseif($link->expires && $link->expires->isPast())
-                                    <span class="inline-block bg-red-500 text-white text-xs px-2 py-1 rounded">Expired</span>
+                                    <span class="status-pill status-pill--danger">Expired</span>
                                 @else
-                                    <span class="inline-block bg-green-500 text-white text-xs px-2 py-1 rounded">Active</span>
+                                    <span class="status-pill status-pill--active">Active</span>
                                 @endif
                             </td>
-                            <td class="py-2 px-4 border text-sm">
+                            <td class="text-sm">
                                 {{ $link->created_at->diffForHumans() }}
                             </td>
-                            <td class="py-2 px-4 border text-sm">
+                            <td class="text-sm">
                                 @if($link->expires)
                                     {{ $link->expires->diffForHumans() }}
                                 @else
-                                    <span class="text-gray-400">Never</span>
+                                    <span class="muted-text">Never</span>
                                 @endif
                             </td>
-                            <td class="py-2 px-4 border text-center">
-                                @if($link->isValid())
-                                    <a 
-                                        href="{{ url('/ul/' . $link->short_code) }}" 
-                                        target="_blank"
-                                        class="text-blue-600 hover:underline mr-2"
+                            <td>
+                                <div class="flex flex-wrap justify-center gap-2">
+                                    @if($link->isValid())
+                                        <a 
+                                            href="{{ url('/ul/' . $link->short_code) }}" 
+                                            target="_blank"
+                                            class="btn-secondary btn-small"
+                                        >
+                                            View
+                                        </a>
+                                    @endif
+                                    <form 
+                                        action="{{ url('/ul/' . $link->short_code) }}?_back=1" 
+                                        method="POST"
+                                        onsubmit="return confirm('Delete this upload link?');"
                                     >
-                                        View
-                                    </a>
-                                @endif
-                                <a 
-                                    href="{{ url('/ul/' . $link->short_code) }}?_back=1" 
-                                    onclick="event.preventDefault(); if(confirm('Delete this upload link?')) { document.getElementById('delete-form-{{ $link->id }}').submit(); }"
-                                    class="text-red-600 hover:underline"
-                                >
-                                    Delete
-                                </a>
-                                <form 
-                                    id="delete-form-{{ $link->id }}" 
-                                    action="{{ url('/ul/' . $link->short_code) }}?_back=1" 
-                                    method="POST" 
-                                    class="hidden"
-                                >
-                                    @csrf
-                                    @method('DELETE')
-                                </form>
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn-danger btn-small">Delete</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @endforeach

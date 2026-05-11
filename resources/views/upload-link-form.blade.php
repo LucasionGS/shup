@@ -6,46 +6,46 @@
     <title>Upload File</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-100">
-    <div class="flex justify-center items-center min-h-screen">
-        <div class="w-full max-w-md">
-            <div class="bg-white shadow-lg rounded-lg p-8">
-                <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">Upload Your File</h1>
+<body>
+    <main class="public-shell">
+        <div class="public-card">
+                <div class="public-brand">S</div>
+                <h1 class="text-2xl font-semibold mb-2 text-center">Upload Your File</h1>
+                <p class="panel-subtitle mb-6 text-center">Send a file securely through this one-time Shup upload link.</p>
                 
                 @if(session('file_url'))
-                    <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                    <div class="alert-success mb-4">
                         <p class="font-semibold mb-2">File uploaded successfully!</p>
                         <div class="flex items-center gap-2">
                             <input 
                                 type="text" 
                                 value="{{ session('file_url') }}" 
                                 readonly 
-                                class="flex-1 p-2 border border-gray-300 rounded bg-gray-50 text-sm"
+                                class="flex-1"
                             >
                             <button 
                                 data-clipboard-text="{{ session('file_url') }}"
-                                class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm"
+                                class="clipboard btn-secondary"
                             >
                                 Copy
                             </button>
                         </div>
-                        <p class="text-sm mt-2">This upload link can no longer be used.</p>
+                        <p class="helper-text">This upload link can no longer be used.</p>
                     </div>
                 @else
-                    <!-- Progress Bar (hidden by default) -->
                     <div id="progress-container" class="hidden mb-4">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="text-sm font-medium text-gray-700">Uploading...</span>
-                            <span id="progress-percent" class="text-sm font-medium text-blue-600">0%</span>
+                            <span class="text-sm font-medium">Uploading...</span>
+                            <span id="progress-percent" class="text-sm font-medium" style="color: var(--accent);">0%</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div class="progress-track h-3 overflow-hidden rounded-md">
                             <div 
                                 id="progress-bar" 
-                                class="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                                class="progress-bar h-3 rounded-md transition-all duration-300"
                                 style="width: 0%"
                             ></div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-1" id="progress-status">Preparing upload...</p>
+                        <p class="helper-text" id="progress-status">Preparing upload...</p>
                     </div>
 
                     <form 
@@ -58,15 +58,12 @@
                         @csrf
                         
                         <div>
-                            <label for="file" class="block text-sm font-medium text-gray-700 mb-2">
-                                Select File
-                            </label>
+                            <label for="file" class="field-label">Select File</label>
                             <input 
                                 type="file" 
                                 name="file" 
                                 id="file" 
                                 required
-                                class="w-full border border-gray-300 rounded-lg p-2 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                             >
                             @error('file')
                                 <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
@@ -74,17 +71,14 @@
                         </div>
 
                         <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                                Password (optional)
-                            </label>
+                            <label for="password" class="field-label">Password (optional)</label>
                             <input 
                                 type="password" 
                                 name="password" 
                                 id="password"
                                 placeholder="Leave empty for no password"
-                                class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             >
-                            <p class="text-xs text-gray-500 mt-1">
+                            <p class="helper-text">
                                 If set, the file will be encrypted and require this password to access.
                             </p>
                             @error('password')
@@ -93,7 +87,7 @@
                         </div>
 
                         @if($errors->has('error'))
-                            <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                            <div class="alert-error">
                                 {{ $errors->first('error') }}
                             </div>
                         @endif
@@ -101,7 +95,7 @@
                         <button 
                             type="submit"
                             id="submit-btn"
-                            class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="btn-primary w-full"
                         >
                             Upload File
                         </button>
@@ -180,21 +174,20 @@
                     </script>
 
                     @if($link->expires)
-                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                            <p class="text-sm text-yellow-800">
+                        <div class="alert-warning mt-4">
+                            <p class="text-sm">
                                 <span class="font-semibold">Note:</span> This link expires {{ $link->expires->diffForHumans() }}
                             </p>
                         </div>
                     @endif
 
-                    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p class="text-sm text-blue-800">
-                            <span class="font-semibold">⚠️ One-time use:</span> This link will expire after uploading one file.
+                    <div class="alert-info mt-4">
+                        <p class="text-sm">
+                            <span class="font-semibold">One-time use:</span> This link will expire after uploading one file.
                         </p>
                     </div>
                 @endif
-            </div>
         </div>
-    </div>
+    </main>
 </body>
 </html>
