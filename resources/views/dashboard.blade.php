@@ -8,6 +8,7 @@
     $urlsCount = \App\Models\ShortURL::where('user_id', $user->id)->count();
     $pasteBinsCount = \App\Models\PasteBin::where('user_id', $user->id)->count();
     $uploadLinksCount = \App\Models\UploadLink::where('user_id', $user->id)->count();
+    $bundlesCount = \App\Models\Bundle::where('user_id', $user->id)->count();
     $storageLimit = $user->storage_limit;
     $storageUsedLabel = \App\Models\File::reduceFileSize($user->storage_used);
     $storageLimitLabel = $storageLimit === 0 ? "Unlimited" : \App\Models\File::reduceFileSize($storageLimit);
@@ -39,7 +40,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div class="stat-card">
             <div>
                 <p class="stat-label">Files</p>
@@ -75,6 +76,15 @@
                 <p class="mt-2 text-sm">One-time links for collecting files into your account.</p>
             </div>
             <a href="{{ route('uploadlinks') }}" class="btn-secondary">Manage Links</a>
+        </div>
+        <div class="stat-card">
+            <div>
+                <p class="stat-label">Bundles</p>
+                <div class="stat-value">{{ $bundlesCount }}</div>
+                <h2 class="mt-3">Share Bundles</h2>
+                <p class="mt-2 text-sm">Grouped files, pastes, and links behind one short code.</p>
+            </div>
+            <a href="{{ route('bundles') }}" class="btn-secondary">Open Bundles</a>
         </div>
     </div>
 </div>

@@ -40,6 +40,7 @@
                         <a href="{{ url('/admin/users') }}" class="auth-button">Admin</a>
                     @endif
                     <a href="{{ route('files') }}" class="auth-button nav-optional">Files</a>
+                    <a href="{{ route('bundles') }}" class="auth-button nav-optional">Bundles</a>
                     <a href="{{ route('uploadlinks') }}" class="auth-button nav-optional">Upload Links</a>
                     <a href="{{ url('/dashboard') }}" class="auth-button">Dashboard</a>
                     <button

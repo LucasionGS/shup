@@ -17,6 +17,7 @@ Artisan::command('su:expired', function () {
         \App\Models\File::class,
         \App\Models\PasteBin::class,
         \App\Models\ShortURL::class,
+        \App\Models\Bundle::class,
     ];
 
     foreach ($models as $model) {
