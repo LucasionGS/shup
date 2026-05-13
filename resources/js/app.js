@@ -1,9 +1,69 @@
 import './bootstrap';
 
-window.addEventListener('load', () => {
-  // Handle startup events
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
 
-  // Handle clipboard
+  const unit = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(unit)), sizes.length - 1);
+  const value = bytes / Math.pow(unit, index);
+
+  return `${Math.round(value * 100) / 100} ${sizes[index]}`;
+}
+
+function getUploadError(xhr) {
+  try {
+    const response = JSON.parse(xhr.responseText);
+
+    if (response.message) {
+      return response.message;
+    }
+
+    if (response.errors) {
+      const firstError = Object.values(response.errors).flat()[0];
+      if (firstError) {
+        return firstError;
+      }
+    }
+  }
+  catch {
+    // Fall through to the generic message when the server returns HTML.
+  }
+
+  return 'Upload failed. Please try again.';
+}
+
+async function refreshPageSection(selector) {
+  if (!selector) {
+    return;
+  }
+
+  const currentSection = document.querySelector(selector);
+  if (!currentSection) {
+    return;
+  }
+
+  const response = await fetch(window.location.href, {
+    headers: {
+      'Accept': 'text/html',
+      'X-Requested-With': 'XMLHttpRequest',
+    },
+  });
+
+  if (!response.ok) {
+    return;
+  }
+
+  const html = await response.text();
+  const nextDocument = new DOMParser().parseFromString(html, 'text/html');
+  const nextSection = nextDocument.querySelector(selector);
+
+  if (nextSection) {
+    currentSection.replaceWith(nextSection);
+  }
+}
+
+window.addEventListener('load', () => {
   const copyToClipboardElements = [...document.querySelectorAll('[data-clipboard-text]')];
   copyToClipboardElements.forEach((element) => {
     element.addEventListener('click', (event) => {
@@ -42,5 +102,154 @@ window.addEventListener('load', () => {
     });
   });
 
-  
+  const uploadProgressForms = [...document.querySelectorAll('[data-upload-progress]')];
+  uploadProgressForms.forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+
+      if (!form.reportValidity()) {
+        return;
+      }
+
+      const scope = form.closest('[data-upload-scope]') || document;
+      const refreshTarget = form.getAttribute('data-upload-refresh-target');
+      const progressContainer = scope.querySelector('[data-upload-progress-container]');
+      const progressBar = scope.querySelector('[data-upload-progress-bar]');
+      const progressPercent = scope.querySelector('[data-upload-progress-percent]');
+      const progressStatus = scope.querySelector('[data-upload-progress-status]');
+      const submitButton = form.querySelector('[data-upload-submit]') || form.querySelector('[type="submit"]');
+      const result = scope.querySelector('[data-upload-result]');
+      const resultUrl = scope.querySelector('[data-upload-result-url]');
+      const resultCopy = scope.querySelector('[data-upload-result-copy]');
+      const originalSubmitText = submitButton?.textContent;
+
+      progressContainer?.classList.remove('hidden');
+      result?.classList.add('hidden');
+
+      if (progressBar) {
+        progressBar.style.width = '0%';
+        progressBar.classList.remove('progress-bar--error');
+      }
+
+      if (progressPercent) {
+        progressPercent.textContent = '0%';
+      }
+
+      if (progressStatus) {
+        progressStatus.textContent = 'Preparing upload...';
+      }
+
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Uploading...';
+      }
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (progressEvent) => {
+        if (!progressEvent.lengthComputable) {
+          if (progressStatus) {
+            progressStatus.textContent = 'Uploading...';
+          }
+
+          return;
+        }
+
+        const percentComplete = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+
+        if (progressBar) {
+          progressBar.style.width = `${percentComplete}%`;
+        }
+
+        if (progressPercent) {
+          progressPercent.textContent = `${percentComplete}%`;
+        }
+
+        if (progressStatus) {
+          progressStatus.textContent = percentComplete < 100
+            ? `Uploading... ${formatBytes(progressEvent.loaded)} of ${formatBytes(progressEvent.total)}`
+            : 'Processing upload...';
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          let uploadedUrl = '';
+
+          try {
+            uploadedUrl = JSON.parse(xhr.responseText).url || '';
+          }
+          catch {
+            uploadedUrl = '';
+          }
+
+          if (progressBar) {
+            progressBar.style.width = '100%';
+          }
+
+          if (progressPercent) {
+            progressPercent.textContent = '100%';
+          }
+
+          if (progressStatus) {
+            progressStatus.textContent = 'Upload complete.';
+          }
+
+          if (uploadedUrl) {
+            if (resultUrl) {
+              resultUrl.value = uploadedUrl;
+            }
+
+            if (resultCopy) {
+              resultCopy.setAttribute('data-clipboard-text', uploadedUrl);
+            }
+
+            result?.classList.remove('hidden');
+          }
+
+          refreshPageSection(refreshTarget).catch(() => {
+            if (progressStatus) {
+              progressStatus.textContent = 'Upload complete. Refresh the page to update the file list.';
+            }
+          });
+
+          form.reset();
+        }
+        else {
+          if (progressBar) {
+            progressBar.classList.add('progress-bar--error');
+          }
+
+          if (progressStatus) {
+            progressStatus.textContent = getUploadError(xhr);
+          }
+        }
+
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = originalSubmitText || 'Upload File';
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        if (progressBar) {
+          progressBar.classList.add('progress-bar--error');
+        }
+
+        if (progressStatus) {
+          progressStatus.textContent = 'Network error. Please try again.';
+        }
+
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = originalSubmitText || 'Upload File';
+        }
+      });
+
+      xhr.open('POST', form.getAttribute('data-upload-action') || form.action);
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+      xhr.send(new FormData(form));
+    });
+  });
 });

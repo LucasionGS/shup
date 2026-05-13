@@ -49,21 +49,54 @@
         </div>
     </div>
 
-    <form action="{{ url('f') }}?_back=1" method="POST" class="form-stack" enctype="multipart/form-data">
-        @csrf
-        <div class="form-row">
-            <input type="file" name="file" required>
-            <button type="submit" class="btn-primary">Upload File</button>
+    <div data-upload-scope>
+        <form
+            action="{{ url('f') }}?_back=1"
+            data-upload-progress
+            data-upload-action="{{ url('f') }}"
+            data-upload-refresh-target="[data-files-library]"
+            method="POST"
+            class="form-stack"
+            enctype="multipart/form-data"
+        >
+            @csrf
+            <div class="form-row">
+                <input type="file" name="file" required>
+                <button type="submit" class="btn-primary" data-upload-submit>Upload File</button>
+            </div>
+            <p class="helper-text">
+                Max upload size: {{ php_ini_loaded_file() ? \App\Models\File::reduceFileSize(
+                    min(
+                        \App\Models\File::expandPHPFileSize(ini_get('upload_max_filesize')),
+                        \App\Models\File::expandPHPFileSize(ini_get('post_max_size'))
+                    )
+            ) : "Unknown" }}
+            </p>
+        </form>
+
+        <div class="surface-card mt-4 hidden" data-upload-progress-container>
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium">Uploading...</span>
+                <span class="text-sm font-medium" style="color: var(--accent);" data-upload-progress-percent>0%</span>
+            </div>
+            <div class="progress-track h-3 overflow-hidden rounded-md">
+                <div
+                    class="progress-bar h-3 rounded-md transition-all duration-300"
+                    style="width: 0%"
+                    data-upload-progress-bar
+                ></div>
+            </div>
+            <p class="helper-text" data-upload-progress-status>Preparing upload...</p>
         </div>
-        <p class="helper-text">
-            Max upload size: {{ php_ini_loaded_file() ? \App\Models\File::reduceFileSize(
-                min(
-                    \App\Models\File::expandPHPFileSize(ini_get('upload_max_filesize')),
-                    \App\Models\File::expandPHPFileSize(ini_get('post_max_size'))
-                )
-        ) : "Unknown" }}
-        </p>
-    </form>
+
+        <div class="alert-success mt-6 hidden" role="alert" data-upload-result>
+            <div class="font-semibold">File uploaded</div>
+            <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                <input type="text" value="" readonly data-upload-result-url>
+                <button class="clipboard btn-secondary" data-clipboard-text="" data-upload-result-copy>Copy</button>
+            </div>
+        </div>
+    </div>
 
     @if (session('short_url'))
         <div class="alert-success mt-6" role="alert">
@@ -75,7 +108,7 @@
         </div>
     @endif
 
-    <div class="mt-8 border-t border-white/10 pt-8">
+    <div class="mt-8 border-t border-white/10 pt-8" data-files-library>
         <div class="panel-header">
             <div>
                 <div class="panel-eyebrow">Library</div>

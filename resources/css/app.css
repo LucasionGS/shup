@@ -620,6 +620,10 @@ div.user-profile-menu--item {
     background: linear-gradient(90deg, var(--accent), var(--accent-strong));
 }
 
+.progress-bar--error {
+    background: var(--danger);
+}
+
 .file-preview {
     @apply rounded-md border p-1;
     background: rgba(5, 6, 8, 0.45);
