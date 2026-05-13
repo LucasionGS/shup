@@ -6,7 +6,6 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\ShortURLController;
 use App\Http\Controllers\PasteBinController;
 use App\Http\Controllers\UploadLinkController;
-use App\Http\Controllers\BundleController;
 use App\Http\Controllers\DirectoryController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,10 +47,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/uploadlinks', function() {
         return view('dashboard.uploadlinks');
     })->name('uploadlinks');
-
-    Route::get('/dashboard/bundles', function() {
-        return view('dashboard.bundles');
-    })->name('bundles');
 
     Route::get('/dashboard/directories', function() {
         return view('dashboard.directories');
@@ -107,11 +102,6 @@ Route::post('/ul', [UploadLinkController::class, 'store'])->middleware('auth');
 Route::get('/ul/{shortCode}', [UploadLinkController::class, 'show']);
 Route::post('/ul/{shortCode}', [UploadLinkController::class, 'upload']);
 Route::delete('/ul/{shortCode}', [UploadLinkController::class, 'destroy'])->middleware('auth');
-
-// Bundles - b
-Route::post('/b', [BundleController::class, 'store'])->middleware('auth');
-Route::get('/b/{shortCode}', [BundleController::class, 'show']);
-Route::delete('/b/{shortCode}', [BundleController::class, 'destroy'])->middleware('auth');
 
 // Directories - d
 Route::post('/d', [DirectoryController::class, 'store']);

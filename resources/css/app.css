@@ -724,50 +724,6 @@ div.user-profile-menu--item {
     color: var(--accent);
 }
 
-.bundle-resource-grid {
-    @apply grid gap-4 lg:grid-cols-3;
-}
-
-.bundle-resource-list {
-    @apply grid max-h-72 gap-2 overflow-y-auto pr-1;
-}
-
-.bundle-resource-option {
-    @apply flex min-w-0 cursor-pointer items-start gap-3 rounded-md border p-3 text-sm;
-    color: var(--text-soft);
-    background: rgba(255, 255, 255, 0.045);
-    border-color: var(--stroke);
-}
-
-.bundle-resource-option:hover {
-    color: var(--text);
-    background: rgba(var(--accent-rgb), 0.1);
-    border-color: rgba(var(--accent-rgb), 0.32);
-}
-
-.bundle-resource-option span {
-    @apply min-w-0;
-}
-
-.bundle-resource-option strong,
-.bundle-resource-option small {
-    @apply block truncate;
-}
-
-.bundle-resource-option small {
-    color: var(--muted);
-}
-
-.bundle-public-list {
-    @apply grid gap-3;
-}
-
-.bundle-public-item {
-    @apply grid gap-4 rounded-lg border p-4 sm:grid-cols-[1fr_auto] sm:items-center;
-    background: rgba(255, 255, 255, 0.055);
-    border-color: var(--stroke);
-}
-
 .directory-actions {
     @apply flex flex-wrap gap-2;
 }
