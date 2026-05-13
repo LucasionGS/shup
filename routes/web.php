@@ -47,6 +47,10 @@ Route::middleware(['auth'])->group(function () {
         return view('dashboard.uploadlinks');
     })->name('uploadlinks');
 
+    Route::get('/profile', function () {
+        return view('dashboard.profile');
+    })->name('profile');
+
     // Account
     Route::get('/passwordreset', function () {
         return view('auth.passwordreset');

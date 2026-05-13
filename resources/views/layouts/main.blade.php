@@ -68,7 +68,7 @@
                                 },
                                 {
                                     label: "Profile",
-                                    url: "/profile"
+                                    url: "{{ route('profile') }}"
                                 },
                                 {
                                     label: "Logout",

@@ -4,21 +4,25 @@
 
 :root {
     color-scheme: dark;
-    --bg: #050608;
-    --bg-soft: #0a0d10;
+    --bg: #07050b;
+    --bg-soft: #0d0913;
     --surface: rgba(15, 18, 23, 0.86);
     --surface-strong: rgba(21, 26, 32, 0.92);
     --surface-muted: rgba(255, 255, 255, 0.055);
     --stroke: rgba(255, 255, 255, 0.11);
     --stroke-strong: rgba(255, 255, 255, 0.18);
-    --text: #f3f7fb;
-    --text-soft: #c6d0dc;
-    --muted: #8c98a8;
-    --accent: #39e7d3;
-    --accent-strong: #72f06d;
+    --text: #f7f3ff;
+    --text-soft: #d8d0e8;
+    --muted: #9b92ad;
+    --accent: #a78bfa;
+    --accent-strong: #f0abfc;
+    --accent-rgb: 167, 139, 250;
+    --accent-strong-rgb: 240, 171, 252;
+    --accent-ink: #170b2f;
     --warning: #f7c948;
     --danger: #ff6b6b;
-    --success: #72f06d;
+    --success: #c4b5fd;
+    --success-rgb: 196, 181, 253;
 }
 
 html {
@@ -31,8 +35,8 @@ body {
     min-height: 100vh;
     color: var(--text);
     background:
-        linear-gradient(135deg, rgba(57, 231, 211, 0.12), transparent 34%),
-        linear-gradient(215deg, rgba(114, 240, 109, 0.08), transparent 42%),
+        linear-gradient(135deg, rgba(var(--accent-rgb), 0.16), transparent 34%),
+        linear-gradient(215deg, rgba(var(--accent-strong-rgb), 0.1), transparent 42%),
         repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0, rgba(255, 255, 255, 0.025) 1px, transparent 1px, transparent 118px),
         repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0, rgba(255, 255, 255, 0.018) 1px, transparent 1px, transparent 118px),
         var(--bg);
@@ -61,7 +65,7 @@ select:disabled {
 }
 
 ::selection {
-    color: #04110f;
+    color: var(--accent-ink);
     background: var(--accent);
 }
 
@@ -89,9 +93,9 @@ select:disabled {
 
 .header-logo-mark {
     @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black;
-    color: #04110f;
+    color: var(--accent-ink);
     background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-    box-shadow: 0 0 30px rgba(57, 231, 211, 0.22);
+    box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.24);
 }
 
 .header-logo-text {
@@ -126,21 +130,21 @@ select:disabled {
 
 .auth-button:hover {
     color: var(--text);
-    background: rgba(57, 231, 211, 0.1);
-    border-color: rgba(57, 231, 211, 0.35);
+    background: rgba(var(--accent-rgb), 0.12);
+    border-color: rgba(var(--accent-rgb), 0.38);
 }
 
 .user-profile-menu-button {
     @apply relative inline-flex items-center justify-center;
-    color: #04110f;
+    color: var(--accent-ink);
     background: linear-gradient(135deg, var(--accent), var(--accent-strong));
     border-color: rgba(255, 255, 255, 0.38);
-    box-shadow: 0 0 24px rgba(57, 231, 211, 0.18);
+    box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.22);
 }
 
 .user-profile-menu-button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 0 34px rgba(57, 231, 211, 0.28);
+    box-shadow: 0 0 34px rgba(var(--accent-rgb), 0.32);
 }
 
 .user-profile-menu-button span {
@@ -232,7 +236,7 @@ select:disabled {
 .surface-card:hover,
 .stat-card:hover {
     background: rgba(255, 255, 255, 0.075);
-    border-color: rgba(57, 231, 211, 0.28);
+    border-color: rgba(var(--accent-rgb), 0.32);
 }
 
 .stat-card {
@@ -258,7 +262,7 @@ select:disabled {
 .storage-meter__bar {
     @apply h-full rounded-md;
     background: linear-gradient(90deg, var(--accent), var(--accent-strong));
-    box-shadow: 0 0 22px rgba(57, 231, 211, 0.28);
+    box-shadow: 0 0 22px rgba(var(--accent-rgb), 0.3);
 }
 
 .btn-primary,
@@ -271,14 +275,14 @@ select:disabled {
 }
 
 .btn-primary {
-    color: #04110f;
+    color: var(--accent-ink);
     background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-    box-shadow: 0 14px 34px rgba(57, 231, 211, 0.18);
+    box-shadow: 0 14px 34px rgba(var(--accent-rgb), 0.24);
 }
 
 .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 18px 38px rgba(57, 231, 211, 0.26);
+    box-shadow: 0 18px 38px rgba(var(--accent-rgb), 0.32);
 }
 
 .btn-secondary {
@@ -289,8 +293,8 @@ select:disabled {
 
 .btn-secondary:hover,
 .btn-ghost:hover {
-    background: rgba(57, 231, 211, 0.1);
-    border-color: rgba(57, 231, 211, 0.34);
+    background: rgba(var(--accent-rgb), 0.12);
+    border-color: rgba(var(--accent-rgb), 0.38);
 }
 
 .btn-danger {
@@ -381,8 +385,8 @@ select:disabled {
 .public-card input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):focus,
 .public-card textarea:focus,
 .public-card select:focus {
-    border-color: rgba(57, 231, 211, 0.58);
-    box-shadow: 0 0 0 4px rgba(57, 231, 211, 0.12);
+    border-color: rgba(var(--accent-rgb), 0.62);
+    box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.16);
 }
 
 input[type="checkbox"] {
@@ -398,7 +402,7 @@ input[type="file"] {
 
 input[type="file"]::file-selector-button {
     @apply mr-3 rounded-md border-0 px-3 py-2 text-sm font-semibold;
-    color: #04110f;
+    color: var(--accent-ink);
     background: linear-gradient(135deg, var(--accent), var(--accent-strong));
     cursor: pointer;
 }
@@ -445,7 +449,7 @@ input[type="file"]::file-selector-button {
 
 .app-panel tbody tr:hover,
 .data-table tbody tr:hover {
-    background: rgba(57, 231, 211, 0.055);
+    background: rgba(var(--accent-rgb), 0.075);
 }
 
 .app-panel th.border,
@@ -491,7 +495,7 @@ input[type="file"]::file-selector-button {
 }
 
 .status-pill--active {
-    color: #04110f;
+    color: var(--accent-ink);
     background: var(--success);
 }
 
@@ -520,9 +524,9 @@ input[type="file"]::file-selector-button {
 .alert-success,
 .app-panel .bg-green-100[role="alert"],
 .public-card .bg-green-100[role="alert"] {
-    color: #d9ffe0;
-    background: rgba(114, 240, 109, 0.12);
-    border-color: rgba(114, 240, 109, 0.28);
+    color: #f3e8ff;
+    background: rgba(var(--success-rgb), 0.14);
+    border-color: rgba(var(--success-rgb), 0.3);
 }
 
 .alert-error,
@@ -542,14 +546,14 @@ input[type="file"]::file-selector-button {
 
 .alert-info,
 .public-card .bg-blue-50 {
-    color: #d8fffb;
-    background: rgba(57, 231, 211, 0.1);
-    border-color: rgba(57, 231, 211, 0.28);
+    color: #ede9fe;
+    background: rgba(var(--accent-rgb), 0.12);
+    border-color: rgba(var(--accent-rgb), 0.3);
 }
 
 .codeblock {
     @apply my-4 block overflow-x-auto rounded-lg p-4 text-left text-sm whitespace-pre-wrap;
-    color: #c9fff1;
+    color: #ede9fe;
     background: #07090c;
     border: 1px solid var(--stroke);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -584,7 +588,7 @@ div.user-profile-menu--item {
 
 .copy-feedback {
     @apply rounded-md px-3 py-1.5 text-xs font-semibold;
-    color: #04110f;
+    color: var(--accent-ink);
     background: var(--accent);
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
 }
@@ -605,8 +609,73 @@ div.user-profile-menu--item {
 
 .public-brand {
     @apply mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg text-lg font-black;
-    color: #04110f;
+    color: var(--accent-ink);
     background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+.profile-hero {
+    @apply grid gap-5 rounded-lg border p-5 sm:grid-cols-[auto_1fr] sm:items-center;
+    background: rgba(var(--accent-rgb), 0.075);
+    border-color: rgba(var(--accent-rgb), 0.24);
+}
+
+.profile-avatar {
+    @apply relative inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg text-lg font-black;
+    color: var(--accent-ink);
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    box-shadow: 0 16px 40px rgba(var(--accent-rgb), 0.22);
+}
+
+.profile-avatar--large {
+    @apply h-24 w-24 text-3xl;
+}
+
+.profile-avatar img {
+    @apply absolute inset-0 h-full w-full object-cover;
+}
+
+.profile-meta {
+    @apply flex flex-wrap gap-2 text-xs font-semibold;
+    color: var(--text-soft);
+}
+
+.profile-meta span {
+    @apply rounded-md border px-2.5 py-1;
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--stroke);
+}
+
+.profile-grid {
+    @apply grid gap-4 lg:grid-cols-2;
+}
+
+.profile-token-row {
+    @apply grid gap-2 sm:grid-cols-[1fr_auto];
+}
+
+.profile-token-row input {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.profile-metric-list {
+    @apply grid gap-2;
+}
+
+.profile-metric-list a {
+    @apply flex items-center justify-between rounded-md border px-3 py-2 text-sm font-semibold;
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.055);
+    border-color: var(--stroke);
+}
+
+.profile-metric-list a:hover {
+    color: var(--text);
+    background: rgba(var(--accent-rgb), 0.12);
+    border-color: rgba(var(--accent-rgb), 0.34);
+}
+
+.profile-metric-list strong {
+    color: var(--accent);
 }
 
 #progress-container .bg-gray-200,

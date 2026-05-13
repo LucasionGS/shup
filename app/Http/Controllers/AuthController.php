@@ -115,7 +115,7 @@ class AuthController extends Controller
         $user->api_token = UuidV4::v4();
         $user->save();
 
-        return redirect()->back();
+        return redirect()->back()->with('account_info', 'API key reset.');
     }
 
     public function updateImage(Request $request) {
@@ -151,9 +151,13 @@ class AuthController extends Controller
 
         // Unset empty values
         foreach ($userData as $key => $value) {
-            if ($value === null || $value === "") {
+            if (($value === null || $value === "") && $key !== 'image') {
                 unset($userData[$key]);
             }
+        }
+
+        if (array_key_exists('image', $userData) && $userData['image'] === "") {
+            $userData['image'] = null;
         }
 
         if (!$isAdmin) {
@@ -177,7 +181,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if ($request->query("_back")) { return back(); }
+        if ($request->query("_back")) { return back()->with('account_info', 'Profile updated.'); }
 
         return response()->json($user);
     }
