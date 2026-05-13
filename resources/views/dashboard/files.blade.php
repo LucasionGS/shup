@@ -56,13 +56,29 @@
             data-upload-action="{{ url('f') }}"
             data-upload-refresh-target="[data-files-library]"
             method="POST"
-            class="form-stack"
+            class="surface-card form-stack"
             enctype="multipart/form-data"
         >
             @csrf
             <div class="form-row">
                 <input type="file" name="file" required>
                 <button type="submit" class="btn-primary" data-upload-submit>Upload File</button>
+            </div>
+            <div class="form-grid">
+                <div>
+                    <label for="file_expires" class="field-label">Expiration</label>
+                    <select name="expires" id="file_expires">
+                        <option value="">No expiry</option>
+                        <option value="60">1 hour</option>
+                        <option value="1440">1 day</option>
+                        <option value="10080">7 days</option>
+                        <option value="43200">30 days</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="file_password" class="field-label">Password</label>
+                    <input type="password" name="password" id="file_password" autocomplete="new-password" placeholder="Optional">
+                </div>
             </div>
             <p class="helper-text">
                 Max upload size: {{ php_ini_loaded_file() ? \App\Models\File::reduceFileSize(

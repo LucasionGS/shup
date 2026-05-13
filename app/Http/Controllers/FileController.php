@@ -85,7 +85,8 @@ class FileController extends Controller
     {
         $request->validate([
             'file' => 'required|file',
-            'password' => 'string'
+            'password' => 'nullable|string',
+            'expires' => 'nullable|integer|min:0',
         ]);
 
         $potentialBearer = $request->header("Authorization") ?? null; // Bearer token
@@ -96,21 +97,22 @@ class FileController extends Controller
 
         if ($authRes = $this->rejectIfNotAuthenticatedIfNeeded($uploader)) { return $authRes; }
         
-        $file = $request->file('file');
+        $uploadedFile = $request->file('file');
         /** @var string|null */
         $password = $request->input('password') ?? $request->input("pwd") ?? null;
 
         /** @var int|null */
         $expiresMins = $request->input('expires', null);
 
-        $fileName = $file->getClientOriginalName();
-        $ext = $file->guessExtension();
+        $fileName = $uploadedFile->getClientOriginalName();
+        $ext = $uploadedFile->guessExtension();
+        $mime = $uploadedFile->getMimeType();
         $shortCode = $this->generateShortcode();
         // $newFilename = $shortCode;
         // if ($ext) {
         //     $newFilename .= ".$ext";
         // }
-        $file->storeAs("files", $password ? "__$shortCode" : $shortCode);
+        $uploadedFile->storeAs("files", $password ? "__$shortCode" : $shortCode);
         
         if ($expiresMins && $expiresMins < 0) {
             $expiresMins = 0;
@@ -135,8 +137,8 @@ class FileController extends Controller
 
         // ENCRYPTION
         if ($password) {
-            $file = file_get_contents("$path/__$shortCode");
-            $encrypted = $this->encryptData($file, $password);
+            $fileContents = file_get_contents("$path/__$shortCode");
+            $encrypted = $this->encryptData($fileContents, $password);
             file_put_contents("$path/$shortCode", $encrypted);
             unlink("$path/__$shortCode");
         }
@@ -149,7 +151,7 @@ class FileController extends Controller
             'short_code' => $shortCode,
             'original_name' => $fileName,
             'ext' => $ext,
-            'mime' => $file->getMimeType(),
+            'mime' => $mime,
             'password' => $password ? Hash::make($password) : null,
             'user_id' => $uploader?->id,
             'expires' => $expireDate,
