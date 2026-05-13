@@ -20,6 +20,8 @@
     $storageLimitLabel = $storageLimit === 0 ? "Unlimited" : \App\Models\File::reduceFileSize($storageLimit);
     $storagePercent = $storageLimit > 0 ? min(100, round(($user->storage_used / $storageLimit) * 100)) : 100;
     $memberSince = $user->created_at ? $user->created_at->format('M j, Y') : 'Unknown';
+    $accentColor = \App\Models\User::normalizeAccentColor(old('accent_color')) ?? $user->accentColor();
+    $accentColorPresets = \App\Models\User::accentColorPresets();
 @endphp
 
 <div class="app-panel profile-page">
@@ -87,6 +89,48 @@
 
             <button type="submit" class="btn-primary">Save Profile</button>
         </form>
+
+        <div class="surface-card form-stack">
+            <div>
+                <div class="panel-eyebrow">Appearance</div>
+                <h2>Accent Color</h2>
+            </div>
+
+            <div class="profile-color-grid">
+                @foreach ($accentColorPresets as $accentColorName => $presetAccentColor)
+                    <form action="{{ route('updateUser', $user) }}?_back=1" method="POST" class="profile-color-form">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="accent_color" value="{{ $presetAccentColor }}">
+                        <button
+                            type="submit"
+                            class="profile-color-swatch @if($accentColor === $presetAccentColor) profile-color-swatch--active @endif"
+                            style="--swatch: {{ $presetAccentColor }};"
+                        >
+                            <span class="profile-color-swatch__chip"></span>
+                            <span>{{ $accentColorName }}</span>
+                        </button>
+                    </form>
+                @endforeach
+            </div>
+
+            <form action="{{ route('updateUser', $user) }}?_back=1" method="POST" class="profile-color-custom">
+                @csrf
+                @method('PUT')
+                <label for="accent_color" class="field-label mb-0">Custom</label>
+                <input type="color" id="accent_color" name="accent_color" value="{{ $accentColor }}">
+                <button type="submit" class="btn-secondary">Save Accent</button>
+            </form>
+
+            @if ($user->accent_color)
+                <form action="{{ route('updateUser', $user) }}?_back=1" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="accent_color" value="">
+                    <button type="submit" class="btn-ghost">Use Default</button>
+                </form>
+            @endif
+        </div>
 
         <div class="surface-card form-stack">
             <div>

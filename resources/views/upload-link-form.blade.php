@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload File</title>
+    @include('partials.app-icons')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
     <main class="public-shell">
         <div class="public-card">
-                <div class="public-brand">S</div>
+                @include('partials.app-mark')
                 <h1 class="text-2xl font-semibold mb-2 text-center">Upload Your File</h1>
                 <p class="panel-subtitle mb-6 text-center">Send a file securely through this one-time Shup upload link.</p>
                 

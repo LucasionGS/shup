@@ -5,14 +5,29 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? env("APP_NAME") }}</title>
+    @include('partials.app-icons')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @auth
+        @php
+            $accentThemeVariables = auth()->user()->accentThemeVariables();
+        @endphp
+        @if ($accentThemeVariables)
+            <style>
+                :root {
+                    @foreach ($accentThemeVariables as $accentThemeVariable => $accentThemeValue)
+                        {{ $accentThemeVariable }}: {{ $accentThemeValue }};
+                    @endforeach
+                }
+            </style>
+        @endif
+    @endauth
 </head>
 <body>
 
     <header class="header">
         <div class="container-standard flex justify-between items-center">
             <a href="{{ url('/') }}" class="header-logo">
-                <span class="header-logo-mark">S</span>
+                @include('partials.app-mark', ['class' => 'header-logo-mark', 'alt' => ''])
                 <span class="header-logo-text">{{ env("APP_NAME") }}</span>
             </a>
             <div class="nav-actions">

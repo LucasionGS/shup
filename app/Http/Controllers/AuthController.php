@@ -161,11 +161,12 @@ class AuthController extends Controller
             'role',
             'storage_limit',
             'image',
+            'accent_color',
         );
 
         // Unset empty values
         foreach ($userData as $key => $value) {
-            if (($value === null || $value === "") && $key !== 'image') {
+            if (($value === null || $value === "") && !in_array($key, ['image', 'accent_color'], true)) {
                 unset($userData[$key]);
             }
         }
@@ -184,6 +185,18 @@ class AuthController extends Controller
             }
 
             $userData['image'] = $this->profileImagePath($file);
+        }
+
+        if (array_key_exists('accent_color', $userData)) {
+            $accentColor = User::normalizeAccentColor($userData['accent_color']);
+
+            if ($accentColor === null && trim((string) $userData['accent_color']) !== '') {
+                return back()->withErrors([
+                    'accent_color' => 'Choose a valid accent color.',
+                ]);
+            }
+
+            $userData['accent_color'] = $accentColor;
         }
 
         if (!$isAdmin) {

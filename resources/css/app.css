@@ -92,10 +92,14 @@ select:disabled {
 }
 
 .header-logo-mark {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-sm font-black;
+    @apply inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg text-sm font-black;
     color: var(--accent-ink);
     background: linear-gradient(135deg, var(--accent), var(--accent-strong));
     box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.24);
+}
+
+.app-icon-image {
+    @apply h-full w-full rounded-lg object-cover;
 }
 
 .header-logo-text {
@@ -608,7 +612,7 @@ div.user-profile-menu--item {
 }
 
 .public-brand {
-    @apply mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg text-lg font-black;
+    @apply mx-auto mb-5 flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg text-lg font-black;
     color: var(--accent-ink);
     background: linear-gradient(135deg, var(--accent), var(--accent-strong));
 }
@@ -647,6 +651,48 @@ div.user-profile-menu--item {
 
 .profile-grid {
     @apply grid gap-4 lg:grid-cols-2;
+}
+
+.profile-color-grid {
+    @apply grid gap-2 sm:grid-cols-2;
+}
+
+.profile-color-form {
+    @apply min-w-0;
+}
+
+.profile-color-swatch {
+    @apply flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm font-semibold;
+    color: var(--text-soft);
+    background: rgba(255, 255, 255, 0.055);
+    border-color: var(--stroke);
+}
+
+.profile-color-swatch:hover,
+.profile-color-swatch--active {
+    color: var(--text);
+    background: rgba(var(--accent-rgb), 0.12);
+    border-color: rgba(var(--accent-rgb), 0.38);
+}
+
+.profile-color-swatch--active {
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.16);
+}
+
+.profile-color-swatch__chip {
+    @apply h-5 w-5 shrink-0 rounded-md;
+    background: var(--swatch);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+}
+
+.profile-color-custom {
+    @apply grid gap-2 sm:grid-cols-[auto_auto_1fr] sm:items-center;
+}
+
+.profile-color-custom input[type="color"] {
+    @apply h-10 w-16 cursor-pointer rounded-md p-1;
+    background: rgba(255, 255, 255, 0.075);
+    border: 1px solid var(--stroke-strong);
 }
 
 .profile-token-row {

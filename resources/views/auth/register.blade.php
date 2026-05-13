@@ -12,7 +12,7 @@ if (isset($token)) {
 
 @section('content')
 <div class="app-panel app-panel--narrow auth-card">
-    <div class="public-brand">S</div>
+    @include('partials.app-mark')
     <h2 class="text-2xl font-semibold mb-2">Create an Account</h2>
     <p class="panel-subtitle mb-6 text-center">Set up your Shup vault for files, links, and paste bins.</p>
 

@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="app-panel app-panel--narrow auth-card">
-    <div class="public-brand">S</div>
+    @include('partials.app-mark')
     <h2 class="text-2xl font-semibold mb-2">Login to Your Account</h2>
     <p class="panel-subtitle mb-6 text-center">Access your file vault, short links, paste bins, and upload links.</p>
 
