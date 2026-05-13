@@ -8,7 +8,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote')->hourly();
 
-Artisan::command('su:expired', function () {
+Artisan::command('shup:expired', function () {
     $this->comment('Deleting expired items');
     /**
      * @var array<\App\Expireable> $models
@@ -28,7 +28,7 @@ Artisan::command('su:expired', function () {
     $this->comment('Deleted ' . \App\Models\InvitedUsers::where('expires_at', '<', now())->delete() . ' expired invites');
 })->purpose('Runs through all the expirable items and deletes them')->everyMinute();
 
-Artisan::command('su:signup {action}', function ($action) {
+Artisan::command('shup:signup {action}', function ($action) {
     if ($action === 'enable') {
         $this->comment('Allowing signups');
         \App\Models\Configuration::set('allow_signup', true);
@@ -40,7 +40,7 @@ Artisan::command('su:signup {action}', function ($action) {
     }
 })->purpose('Enable or disable signups');
 
-Artisan::command('su:anonymous_upload {action}', function ($action) {
+Artisan::command('shup:anonymous_upload {action}', function ($action) {
     if ($action === 'enable') {
         $this->comment('Allowing anonymous uploads');
         \App\Models\Configuration::set('allow_anonymous_upload', true);
@@ -52,13 +52,13 @@ Artisan::command('su:anonymous_upload {action}', function ($action) {
     }
 })->purpose('Enable or disable anonymous uploads');
 
-Artisan::command("su:recalculate_storage", function () {
+Artisan::command("shup:recalculate_storage", function () {
     $this->comment('Recalculating storage for all users');
     User::all()->each->calculateStorage();
     $this->comment('Done');
 })->purpose('Recalculate storage for all users')->daily();
 
-Artisan::command("su:recalculate_physical_storage", function () {
+Artisan::command("shup:recalculate_physical_storage", function () {
     $this->comment('Recalculating physical storage for all content...');
     
     
@@ -114,12 +114,12 @@ Artisan::command("su:recalculate_physical_storage", function () {
     }
 
     $this->comment('Recalculating user totals...');
-    Artisan::call('su:recalculate_storage');
+    Artisan::call('shup:recalculate_storage');
     
     $this->comment('Done');
 })->purpose('Recalculate storage for all users')->daily();
 
-Artisan::command("su:role {email?} {role?}", function ($email = null, $role = null) {
+Artisan::command("shup:role {email?} {role?}", function ($email = null, $role = null) {
 
     if ($email === null) {
         $this->comment('Valid roles:');
