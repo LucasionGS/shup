@@ -14,6 +14,14 @@ class ConfigurationController extends Controller
     {
         $data = $request->toArray();
 
+        if ($request->has('app_title')) {
+            $request->validate([
+                'app_title' => 'nullable|string|max:80',
+            ]);
+
+            $data['app_title'] = trim((string) $request->input('app_title'));
+        }
+
         // Cast values properly
         foreach ($data as $key => $value) {
             if (is_numeric($value)) {

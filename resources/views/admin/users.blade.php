@@ -21,6 +21,10 @@
         <h2 class="mb-4">General</h2>
         <div class="form-grid">
             <div>
+                <label for="app_title" class="field-label">App Title</label>
+                <input type="text" id="app_title" name="app_title" maxlength="80" value="{{ App\Models\Configuration::appTitle() }}" required>
+            </div>
+            <div>
                 <label for="allow_signup" class="field-label">Allow Signups</label>
                 @include('form-inputs.select-bool', [
                     'name' => 'allow_signup', 'id' => 'allow_signup', 'value' => App\Models\Configuration::getBool('allow_signup', false)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password</title>
+    <title>Password | {{ App\Models\Configuration::appTitle() }}</title>
     @include('partials.app-icons')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

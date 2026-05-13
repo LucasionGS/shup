@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+@php
+    $appTitle = App\Models\Configuration::appTitle();
+@endphp
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $title ?? env("APP_NAME") }}</title>
+    <title>{{ $title ?? $appTitle }}</title>
     @include('partials.app-icons')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @auth
@@ -28,7 +31,7 @@
         <div class="container-standard flex justify-between items-center">
             <a href="{{ url('/') }}" class="header-logo">
                 @include('partials.app-mark', ['class' => 'header-logo-mark', 'alt' => ''])
-                <span class="header-logo-text">{{ env("APP_NAME") }}</span>
+                <span class="header-logo-text">{{ $appTitle }}</span>
             </a>
             <div class="nav-actions">
                 @auth
@@ -150,7 +153,7 @@
     </main>
 
     <footer class="footer">
-        Powered by {{ env("APP_NAME") }}
+        Powered by Shup
     </footer>
 </body>
 </html>

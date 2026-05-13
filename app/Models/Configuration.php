@@ -25,6 +25,11 @@ class Configuration extends Model
     public static function getBool($key, bool $default = null) { return (bool) self::getValue($key, $default); }
     public static function getArray($key, array $default = null) { return (array) self::getValue($key, $default); }
 
+    public static function appTitle(): string
+    {
+        return trim(self::getString('app_title', 'Shup')) ?: 'Shup';
+    }
+
     public static function set(string $key, mixed $value, ?string $type = null)
     {
         $config = self::firstOrNew(['key' => $key]);

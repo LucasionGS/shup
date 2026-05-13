@@ -66,9 +66,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/user', [AuthController::class, 'updateImage'])->name('updateUserImage');
     Route::put('/user/{user}', [AuthController::class, 'update'])->name('updateUser');
 
-    Route::post('/configure', [
-        ConfigurationController::class, 'store'
-      ])->name('configure');
 });
 
 Route::middleware(['auth', 'isAdmin'])->group(function () {
@@ -77,6 +74,9 @@ Route::middleware(['auth', 'isAdmin'])->group(function () {
         return view('admin.users');
     })->name('admin.users');
     Route::post('/user/invite', [AuthController::class, 'invite'])->name('inviteUser');
+    Route::post('/configure', [
+        ConfigurationController::class, 'store'
+    ])->name('configure');
 });
 
 // APIs
