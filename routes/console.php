@@ -18,6 +18,7 @@ Artisan::command('su:expired', function () {
         \App\Models\PasteBin::class,
         \App\Models\ShortURL::class,
         \App\Models\Bundle::class,
+        \App\Models\Directory::class,
     ];
 
     foreach ($models as $model) {
@@ -100,6 +101,17 @@ Artisan::command("su:recalculate_physical_storage", function () {
         $short_url->size = strlen($short_url->url);
         $short_url->save();
         $this->comment("Short URL size updated to {$short_url->size} bytes");
+    }
+
+    $directories = \App\Models\Directory::with('files')->get();
+    $directory_count = $directories->count();
+    for ($i = 0; $i < $directory_count; $i++) {
+        $directory = $directories[$i];
+        $rI = $i + 1;
+        $this->comment("Processing directory {$rI}/{$directory_count}");
+        $directory->size = $directory->files->sum('size');
+        $directory->save();
+        $this->comment("Directory size updated to {$directory->size} bytes");
     }
 
     $this->comment('Recalculating user totals...');

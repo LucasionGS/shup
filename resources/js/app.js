@@ -33,6 +33,27 @@ function getUploadError(xhr) {
   return 'Upload failed. Please try again.';
 }
 
+function buildUploadFormData(form) {
+  const formData = new FormData(form);
+
+  if (!form.hasAttribute('data-directory-upload')) {
+    return formData;
+  }
+
+  formData.delete('paths');
+  formData.delete('paths[]');
+
+  const fileInputs = [...form.querySelectorAll('input[type="file"][name="files"], input[type="file"][name="files[]"]')];
+
+  fileInputs.forEach((input) => {
+    [...input.files].forEach((file) => {
+      formData.append('paths[]', file.webkitRelativePath || file.name);
+    });
+  });
+
+  return formData;
+}
+
 async function refreshPageSection(selector) {
   if (!selector) {
     return;
@@ -60,12 +81,19 @@ async function refreshPageSection(selector) {
 
   if (nextSection) {
     currentSection.replaceWith(nextSection);
+    initializeInteractions(nextSection);
   }
 }
 
-window.addEventListener('load', () => {
-  const copyToClipboardElements = [...document.querySelectorAll('[data-clipboard-text]')];
+function initializeInteractions(root = document) {
+  const copyToClipboardElements = [...root.querySelectorAll('[data-clipboard-text]')];
   copyToClipboardElements.forEach((element) => {
+    if (element.hasAttribute('data-clipboard-ready')) {
+      return;
+    }
+
+    element.setAttribute('data-clipboard-ready', '1');
+
     element.addEventListener('click', (event) => {
       event.preventDefault();
       const text = element.getAttribute('data-clipboard-text');
@@ -102,8 +130,14 @@ window.addEventListener('load', () => {
     });
   });
 
-  const uploadProgressForms = [...document.querySelectorAll('[data-upload-progress]')];
+  const uploadProgressForms = [...root.querySelectorAll('[data-upload-progress]')];
   uploadProgressForms.forEach((form) => {
+    if (form.hasAttribute('data-upload-progress-ready')) {
+      return;
+    }
+
+    form.setAttribute('data-upload-progress-ready', '1');
+
     form.addEventListener('submit', (event) => {
       event.preventDefault();
 
@@ -249,7 +283,9 @@ window.addEventListener('load', () => {
       xhr.open('POST', form.getAttribute('data-upload-action') || form.action);
       xhr.setRequestHeader('Accept', 'application/json');
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-      xhr.send(new FormData(form));
+      xhr.send(buildUploadFormData(form));
     });
   });
-});
+}
+
+window.addEventListener('load', () => initializeInteractions());

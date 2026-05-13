@@ -8,6 +8,7 @@
     $filesCount = \App\Models\File::where('user_id', $user->id)->count();
     $urlsCount = \App\Models\ShortURL::where('user_id', $user->id)->count();
     $pasteBinsCount = \App\Models\PasteBin::where('user_id', $user->id)->count();
+    $directoriesCount = \App\Models\Directory::where('user_id', $user->id)->count();
     $uploadLinksCount = \App\Models\UploadLink::where('user_id', $user->id)->count();
     $activeUploadLinksCount = \App\Models\UploadLink::where('user_id', $user->id)
         ->where('used', false)
@@ -210,6 +211,10 @@
                 <a href="{{ route('shorturls') }}">
                     <span>Short URLs</span>
                     <strong>{{ $urlsCount }}</strong>
+                </a>
+                <a href="{{ route('directories') }}">
+                    <span>Directories</span>
+                    <strong>{{ $directoriesCount }}</strong>
                 </a>
                 <a href="{{ route('pastes') }}">
                     <span>Paste Bins</span>

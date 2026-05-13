@@ -7,6 +7,7 @@ use App\Http\Controllers\ShortURLController;
 use App\Http\Controllers\PasteBinController;
 use App\Http\Controllers\UploadLinkController;
 use App\Http\Controllers\BundleController;
+use App\Http\Controllers\DirectoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/login', function () {
@@ -51,6 +52,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/bundles', function() {
         return view('dashboard.bundles');
     })->name('bundles');
+
+    Route::get('/dashboard/directories', function() {
+        return view('dashboard.directories');
+    })->name('directories');
 
     Route::get('/profile', function () {
         return view('dashboard.profile');
@@ -107,3 +112,12 @@ Route::delete('/ul/{shortCode}', [UploadLinkController::class, 'destroy'])->midd
 Route::post('/b', [BundleController::class, 'store'])->middleware('auth');
 Route::get('/b/{shortCode}', [BundleController::class, 'show']);
 Route::delete('/b/{shortCode}', [BundleController::class, 'destroy'])->middleware('auth');
+
+// Directories - d
+Route::post('/d', [DirectoryController::class, 'store']);
+Route::post('/d/{shortCode}/-/upload', [DirectoryController::class, 'upload']);
+Route::post('/d/{shortCode}/-/folders', [DirectoryController::class, 'storeFolder']);
+Route::delete('/d/{shortCode}/-/entries', [DirectoryController::class, 'destroyEntry']);
+Route::delete('/d/{shortCode}', [DirectoryController::class, 'destroy']);
+Route::get('/d/{shortCode}/-/zip/{path?}', [DirectoryController::class, 'zip'])->where('path', '.*');
+Route::get('/d/{shortCode}/{path?}', [DirectoryController::class, 'show'])->where('path', '.*');

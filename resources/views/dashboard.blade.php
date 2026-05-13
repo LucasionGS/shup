@@ -9,6 +9,7 @@
     $pasteBinsCount = \App\Models\PasteBin::where('user_id', $user->id)->count();
     $uploadLinksCount = \App\Models\UploadLink::where('user_id', $user->id)->count();
     $bundlesCount = \App\Models\Bundle::where('user_id', $user->id)->count();
+    $directoriesCount = \App\Models\Directory::where('user_id', $user->id)->count();
     $storageLimit = $user->storage_limit;
     $storageUsedLabel = \App\Models\File::reduceFileSize($user->storage_used);
     $storageLimitLabel = $storageLimit === 0 ? "Unlimited" : \App\Models\File::reduceFileSize($storageLimit);
@@ -40,7 +41,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <div class="stat-card">
             <div>
                 <p class="stat-label">Files</p>
@@ -58,6 +59,15 @@
                 <p class="mt-2 text-sm">Compact redirects with hit tracking.</p>
             </div>
             <a href="{{ route('shorturls') }}" class="btn-secondary">Open URLs</a>
+        </div>
+        <div class="stat-card">
+            <div>
+                <p class="stat-label">Directories</p>
+                <div class="stat-value">{{ $directoriesCount }}</div>
+                <h2 class="mt-3">File Trees</h2>
+                <p class="mt-2 text-sm">Nested folders with file-manager sharing.</p>
+            </div>
+            <a href="{{ route('directories') }}" class="btn-secondary">Open Directories</a>
         </div>
         <div class="stat-card">
             <div>

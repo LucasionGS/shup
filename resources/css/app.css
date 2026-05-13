@@ -768,6 +768,93 @@ div.user-profile-menu--item {
     border-color: var(--stroke);
 }
 
+.directory-actions {
+    @apply flex flex-wrap gap-2;
+}
+
+.directory-breadcrumbs {
+    @apply mb-4 flex min-w-0 flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.045);
+    border-color: var(--stroke);
+}
+
+.directory-breadcrumbs a {
+    @apply max-w-48 truncate font-semibold;
+    color: var(--text-soft);
+}
+
+.directory-breadcrumbs a:hover {
+    color: var(--accent);
+}
+
+.directory-owner-tools {
+    @apply grid gap-4 lg:grid-cols-3;
+}
+
+.directory-list {
+    @apply grid gap-2;
+}
+
+.directory-row {
+    @apply grid gap-3 rounded-lg border p-3 sm:items-center;
+    grid-template-columns: minmax(0, 25%) minmax(0, 1fr);
+    background: rgba(255, 255, 255, 0.045);
+    border-color: var(--stroke);
+}
+
+@media (min-width: 640px) {
+    .directory-row {
+        grid-template-columns: minmax(0, 25%) minmax(0, 1fr) auto auto;
+    }
+}
+
+.directory-row:hover {
+    background: rgba(var(--accent-rgb), 0.08);
+    border-color: rgba(var(--accent-rgb), 0.28);
+}
+
+.directory-row__main {
+    @apply flex min-w-0 items-center;
+    color: var(--text);
+}
+
+.directory-row__preview {
+    @apply flex min-h-12 w-full min-w-0 items-center;
+}
+
+.directory-row__icon {
+    @apply inline-flex h-8 min-w-16 shrink-0 items-center justify-center rounded-md px-2 text-xs font-semibold;
+    color: var(--accent-ink);
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+}
+
+.directory-row__name {
+    @apply truncate font-semibold;
+}
+
+.directory-row__meta {
+    @apply text-sm;
+    color: var(--muted);
+}
+
+.directory-row__actions {
+    @apply flex flex-wrap gap-2 sm:justify-end;
+}
+
+.directory-media-preview {
+    @apply block w-full;
+}
+
+.directory-media-preview--image,
+.directory-media-preview--video {
+    @apply h-24 object-scale-down sm:h-20;
+}
+
+.directory-media-preview--audio {
+    @apply h-10;
+}
+
 #progress-container .bg-gray-200,
 .progress-track {
     background: rgba(255, 255, 255, 0.08);
