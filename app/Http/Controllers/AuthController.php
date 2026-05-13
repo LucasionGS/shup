@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\RegistrationInvitation;
 use App\Models\Configuration;
+use App\Models\File;
 use App\Models\InvitedUsers;
 use App\Models\User;
 use Auth;
@@ -119,18 +120,31 @@ class AuthController extends Controller
     }
 
     public function updateImage(Request $request) {
-        // TODO: Make safer for the love of all that's holy.
-        $imageUrl = $request->input("url");
+        $request->validate([
+            'short_code' => 'nullable|string|max:100',
+            'url' => 'nullable|string|max:255',
+        ]);
 
         /**
          * @var User
          */
         $user = Auth::user();
 
-        $user->image = $imageUrl;
+        $file = $this->resolveProfileImageFile(
+            $request->input('short_code') ?: $request->input('url'),
+            $user
+        );
+
+        if (!$file) {
+            return back()->withErrors([
+                'image' => 'Select an unprotected image from your uploads.',
+            ]);
+        }
+
+        $user->image = $this->profileImagePath($file);
         $user->save();
 
-        return back();
+        return back()->with('account_info', 'Profile image updated.');
     }
 
     public function update(Request $request, User $user) {
@@ -160,6 +174,18 @@ class AuthController extends Controller
             $userData['image'] = null;
         }
 
+        if (array_key_exists('image', $userData) && $userData['image'] !== null) {
+            $file = $this->resolveProfileImageFile($userData['image'], $user);
+
+            if (!$file) {
+                return back()->withErrors([
+                    'image' => 'Select an unprotected image from this user\'s uploads.',
+                ]);
+            }
+
+            $userData['image'] = $this->profileImagePath($file);
+        }
+
         if (!$isAdmin) {
             if (isset($userData['role']))
                 unset($userData['role']);
@@ -184,6 +210,50 @@ class AuthController extends Controller
         if ($request->query("_back")) { return back()->with('account_info', 'Profile updated.'); }
 
         return response()->json($user);
+    }
+
+    private function resolveProfileImageFile(?string $value, User $user): ?File
+    {
+        $shortCode = $this->profileImageShortCode($value);
+
+        if (!$shortCode) {
+            return null;
+        }
+
+        return File::where('short_code', $shortCode)
+            ->where('user_id', $user->id)
+            ->where('mime', 'LIKE', 'image/%')
+            ->whereNull('password')
+            ->where(function ($query) {
+                $query->whereNull('expires')->orWhere('expires', '>', now());
+            })
+            ->first();
+    }
+
+    private function profileImageShortCode(?string $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if (preg_match('/^[A-Za-z0-9_-]+$/', $value)) {
+            return $value;
+        }
+
+        $path = parse_url($value, PHP_URL_PATH);
+
+        if (!$path || !preg_match('#^/f/([^/]+)(?:/|$)#', $path, $matches)) {
+            return null;
+        }
+
+        return $matches[1];
+    }
+
+    private function profileImagePath(File $file): string
+    {
+        return "/f/$file->short_code";
     }
 
     public function invite(Request $request) {

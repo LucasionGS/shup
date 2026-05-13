@@ -85,13 +85,35 @@
                 <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" required>
             </div>
 
-            <div>
-                <label for="image" class="field-label">Avatar URL</label>
-                <input type="url" id="image" name="image" value="{{ old('image', $user->image) }}" placeholder="https://example.com/avatar.png">
-            </div>
-
             <button type="submit" class="btn-primary">Save Profile</button>
         </form>
+
+        <div class="surface-card form-stack">
+            <div>
+                <div class="panel-eyebrow">Avatar</div>
+                <h2>Profile Image</h2>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-4">
+                <div class="profile-avatar">
+                    <span>{{ $avatarInitial }}</span>
+                    @if ($user->image)
+                        <img src="{{ $user->image }}" alt="{{ $user->name }}" onerror="this.remove()">
+                    @endif
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('files') }}" class="btn-secondary">Open Files</a>
+                    @if ($user->image)
+                        <form action="{{ route('updateUser', $user) }}?_back=1" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="image" value="">
+                            <button type="submit" class="btn-ghost">Remove Avatar</button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
 
         <div class="surface-card form-stack">
             <div>

@@ -206,11 +206,11 @@
                                     </td>
                                     <td>
                                         <div class="flex flex-wrap justify-center gap-2">
-                                            @if (Auth::check() && str_starts_with($file->mime, "image/"))
+                                            @if (Auth::check() && str_starts_with($file->mime, "image/") && !$file->password)
                                                 <form action="{{ route("updateUserImage") }}" method="POST">
                                                     @csrf
                                                     @method('POST')
-                                                    <input type="hidden" name="url" value="{{ "/f/$file->short_code" }}">
+                                                    <input type="hidden" name="short_code" value="{{ $file->short_code }}">
                                                     <button type="submit" class="btn-secondary btn-small">Set Profile</button>
                                                 </form>
                                             @endif
