@@ -1,6 +1,6 @@
 import './bootstrap';
 
-function formatBytes(bytes) {
+function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
 
   const unit = 1024;
@@ -11,16 +11,22 @@ function formatBytes(bytes) {
   return `${Math.round(value * 100) / 100} ${sizes[index]}`;
 }
 
-function getUploadError(xhr) {
+function getUploadError(xhr: XMLHttpRequest): string {
   try {
-    const response = JSON.parse(xhr.responseText);
+    const response = JSON.parse(xhr.responseText) as {
+      message?: unknown;
+      errors?: Record<string, unknown>;
+    };
 
-    if (response.message) {
+    if (typeof response.message === 'string') {
       return response.message;
     }
 
     if (response.errors) {
-      const firstError = Object.values(response.errors).flat()[0];
+      const firstError = Object.values(response.errors)
+        .flatMap((value) => Array.isArray(value) ? value : [value])
+        .find((value): value is string => typeof value === 'string');
+
       if (firstError) {
         return firstError;
       }
@@ -33,7 +39,7 @@ function getUploadError(xhr) {
   return 'Upload failed. Please try again.';
 }
 
-function buildUploadFormData(form) {
+function buildUploadFormData(form: HTMLFormElement): FormData {
   const formData = new FormData(form);
 
   if (!form.hasAttribute('data-directory-upload')) {
@@ -43,10 +49,10 @@ function buildUploadFormData(form) {
   formData.delete('paths');
   formData.delete('paths[]');
 
-  const fileInputs = [...form.querySelectorAll('input[type="file"][name="files"], input[type="file"][name="files[]"]')];
+  const fileInputs = [...form.querySelectorAll<HTMLInputElement>('input[type="file"][name="files"], input[type="file"][name="files[]"]')];
 
   fileInputs.forEach((input) => {
-    [...input.files].forEach((file) => {
+    [...(input.files ?? [])].forEach((file) => {
       formData.append('paths[]', file.webkitRelativePath || file.name);
     });
   });
@@ -54,7 +60,7 @@ function buildUploadFormData(form) {
   return formData;
 }
 
-async function refreshPageSection(selector) {
+async function refreshPageSection(selector: string | null): Promise<void> {
   if (!selector) {
     return;
   }
@@ -85,8 +91,8 @@ async function refreshPageSection(selector) {
   }
 }
 
-function initializeInteractions(root = document) {
-  const copyToClipboardElements = [...root.querySelectorAll('[data-clipboard-text]')];
+function initializeInteractions(root: ParentNode = document): void {
+  const copyToClipboardElements = [...root.querySelectorAll<HTMLElement>('[data-clipboard-text]')];
   copyToClipboardElements.forEach((element) => {
     if (element.hasAttribute('data-clipboard-ready')) {
       return;
@@ -96,7 +102,7 @@ function initializeInteractions(root = document) {
 
     element.addEventListener('click', (event) => {
       event.preventDefault();
-      const text = element.getAttribute('data-clipboard-text');
+      const text = element.getAttribute('data-clipboard-text') ?? '';
       if (navigator.clipboard) {
         navigator.clipboard.writeText(text);
       }
@@ -109,28 +115,29 @@ function initializeInteractions(root = document) {
         document.body.removeChild(textArea);
       }
 
+      const pointerEvent = event as MouseEvent;
       const floatingElement = document.createElement('div');
       floatingElement.classList.add('copy-feedback');
       floatingElement.innerText = 'Copied';
       floatingElement.style.pointerEvents = 'none';
       floatingElement.style.position = 'absolute';
-      floatingElement.style.top = `${event.clientY}px`;
-      floatingElement.style.left = `${event.clientX}px`;
+      floatingElement.style.top = `${pointerEvent.clientY}px`;
+      floatingElement.style.left = `${pointerEvent.clientX}px`;
 
       document.body.appendChild(floatingElement);
       let opacity = 1;
-      const int = setInterval(() => {
+      const int = window.setInterval(() => {
         floatingElement.style.top = `${floatingElement.offsetTop - 1}px`;
-        floatingElement.style.opacity = opacity = opacity - 0.01;
+        floatingElement.style.opacity = `${opacity = opacity - 0.01}`;
         if (opacity <= 0) {
           document.body.removeChild(floatingElement);
-          clearInterval(int);
+          window.clearInterval(int);
         }
       }, 10);
     });
   });
 
-  const uploadProgressForms = [...root.querySelectorAll('[data-upload-progress]')];
+  const uploadProgressForms = [...root.querySelectorAll<HTMLFormElement>('form[data-upload-progress]')];
   uploadProgressForms.forEach((form) => {
     if (form.hasAttribute('data-upload-progress-ready')) {
       return;
@@ -145,16 +152,16 @@ function initializeInteractions(root = document) {
         return;
       }
 
-      const scope = form.closest('[data-upload-scope]') || document;
+      const scope = form.closest('[data-upload-scope]') ?? document;
       const refreshTarget = form.getAttribute('data-upload-refresh-target');
-      const progressContainer = scope.querySelector('[data-upload-progress-container]');
-      const progressBar = scope.querySelector('[data-upload-progress-bar]');
-      const progressPercent = scope.querySelector('[data-upload-progress-percent]');
-      const progressStatus = scope.querySelector('[data-upload-progress-status]');
-      const submitButton = form.querySelector('[data-upload-submit]') || form.querySelector('[type="submit"]');
-      const result = scope.querySelector('[data-upload-result]');
-      const resultUrl = scope.querySelector('[data-upload-result-url]');
-      const resultCopy = scope.querySelector('[data-upload-result-copy]');
+      const progressContainer = scope.querySelector<HTMLElement>('[data-upload-progress-container]');
+      const progressBar = scope.querySelector<HTMLElement>('[data-upload-progress-bar]');
+      const progressPercent = scope.querySelector<HTMLElement>('[data-upload-progress-percent]');
+      const progressStatus = scope.querySelector<HTMLElement>('[data-upload-progress-status]');
+      const submitButton = form.querySelector<HTMLButtonElement>('[data-upload-submit]') || form.querySelector<HTMLButtonElement>('[type="submit"]');
+      const result = scope.querySelector<HTMLElement>('[data-upload-result]');
+      const resultUrl = scope.querySelector<HTMLInputElement>('[data-upload-result-url]');
+      const resultCopy = scope.querySelector<HTMLElement>('[data-upload-result-copy]');
       const originalSubmitText = submitButton?.textContent;
 
       progressContainer?.classList.remove('hidden');
@@ -211,7 +218,7 @@ function initializeInteractions(root = document) {
           let uploadedUrl = '';
 
           try {
-            uploadedUrl = JSON.parse(xhr.responseText).url || '';
+            uploadedUrl = (JSON.parse(xhr.responseText) as { url?: string }).url || '';
           }
           catch {
             uploadedUrl = '';

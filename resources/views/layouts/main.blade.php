@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? $appTitle }}</title>
     @include('partials.app-icons')
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/app.ts'])
     @auth
         @php
             $accentThemeVariables = auth()->user()->accentThemeVariables();

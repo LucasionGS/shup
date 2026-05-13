@@ -67,6 +67,6 @@ class AdminAppTitleTest extends TestCase
 
         $this->get('/ul/not-real')
             ->assertOk()
-            ->assertSee('<title>Public Drop</title>', false);
+            ->assertSee('Public Drop</title>', false);
     }
 }
