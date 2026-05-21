@@ -46,9 +46,21 @@
         <div>
             <div class="panel-eyebrow">Accounts</div>
             <h2>Users</h2>
-            <p class="panel-subtitle">Invite new users and update account details.</p>
+            <p class="panel-subtitle">Invite new users and update account details, roles, and storage quotas.</p>
         </div>
     </div>
+
+    @if ($errors->any())
+        <div class="alert-error mb-4" role="alert">
+            {{ $errors->first() }}
+        </div>
+    @endif
+
+    @if (session('account_info'))
+        <div class="alert-success mb-4" role="alert">
+            {{ session('account_info') }}
+        </div>
+    @endif
 
     @if (session('invite_info'))
         <div class="alert-success mb-4" role="alert">
@@ -68,12 +80,13 @@
     </form>
     
     <div class="table-shell">
-        <table class="data-table min-w-[920px]">
+        <table class="data-table min-w-[1120px]">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
+                    <th>Storage Quota</th>
                     <th>Role</th>
                     <th class="text-center">Save</th>
                     <th class="text-center">Delete</th>
@@ -92,6 +105,16 @@
                             </td>
                             <td>
                                 <input name="email" value="{{ $listedUser->email }}">
+                            </td>
+                            <td>
+                                @php
+                                    $storageLimitValue = $listedUser->storage_limit === 0
+                                        ? 'Unlimited'
+                                        : \App\Models\File::reduceFileSize($listedUser->storage_limit);
+                                    $storageUsedLabel = \App\Models\File::reduceFileSize($listedUser->storage_used);
+                                @endphp
+                                <input name="storage_limit" value="{{ $storageLimitValue }}" aria-label="Storage quota for {{ $listedUser->name }}">
+                                <p class="helper-text mt-1">{{ $storageUsedLabel }} used. Use 0, Unlimited, or 10 GB.</p>
                             </td>
                             <td class="text-center">
                                 @if ($listedUser->id !== auth()->id())

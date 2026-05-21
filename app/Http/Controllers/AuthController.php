@@ -166,7 +166,7 @@ class AuthController extends Controller
 
         // Unset empty values
         foreach ($userData as $key => $value) {
-            if (($value === null || $value === "") && !in_array($key, ['image', 'accent_color'], true)) {
+            if (($value === null || $value === "") && !in_array($key, ['image', 'accent_color', 'storage_limit'], true)) {
                 unset($userData[$key]);
             }
         }
@@ -212,6 +212,18 @@ class AuthController extends Controller
                 unset($userData['role']);
         }
 
+        if (array_key_exists('storage_limit', $userData)) {
+            $storageLimit = $this->normalizeStorageLimit($userData['storage_limit']);
+
+            if ($storageLimit === null) {
+                return back()->withErrors([
+                    'storage_limit' => 'Enter a quota like 10 GB, 500 MB, 1048576, or Unlimited.',
+                ]);
+            }
+
+            $userData['storage_limit'] = $storageLimit;
+        }
+
         try {
             $user->update($userData);
         } catch (\Throwable $th) {
@@ -223,6 +235,44 @@ class AuthController extends Controller
         if ($request->query("_back")) { return back()->with('account_info', 'Profile updated.'); }
 
         return response()->json($user);
+    }
+
+    private function normalizeStorageLimit(mixed $value): ?int
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return 0;
+        }
+
+        $normalized = strtolower($value);
+        if (in_array($normalized, ['0', 'unlimited', 'infinite', 'infinity', 'inf'], true)) {
+            return 0;
+        }
+
+        if (ctype_digit($value)) {
+            return (int) $value;
+        }
+
+        if (!preg_match('/^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb)$/i', $value, $matches)) {
+            return null;
+        }
+
+        $units = [
+            'b' => 1,
+            'kb' => 1024,
+            'mb' => 1024 ** 2,
+            'gb' => 1024 ** 3,
+            'tb' => 1024 ** 4,
+        ];
+
+        $bytes = (float) $matches[1] * $units[strtolower($matches[2])];
+
+        if ($bytes < 0 || $bytes > PHP_INT_MAX) {
+            return null;
+        }
+
+        return (int) round($bytes);
     }
 
     private function resolveProfileImageFile(?string $value, User $user): ?File
