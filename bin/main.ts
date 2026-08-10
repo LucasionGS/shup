@@ -78,17 +78,24 @@ function normalizeUrl(url: string): string {
   return value;
 }
 
-/** Config file, overridden by environment variables, overridden by CLI flags. */
-function resolveConfig(overrides: { url?: string; apiKey?: string }): Config {
+/**
+ * Config file, overridden by environment variables, overridden by CLI flags.
+ * With nothing configured at all, walks the user through the setup once.
+ */
+async function resolveConfig(overrides: { url?: string; apiKey?: string }): Promise<Config> {
   const file = readConfigFile();
   const url = overrides.url ?? env("SHUP_URL") ?? file.url;
   const apiKey = overrides.apiKey ?? env("SHUP_API_KEY") ?? file.apiKey;
 
   if (!url) {
-    throw new CliError(
-      "No Shup server configured.",
-      "Run `shup config init`, or pass --url https://your.shup.instance",
-    );
+    if (!Deno.stdin.isTerminal()) {
+      throw new CliError(
+        "No Shup server configured.",
+        "Run `shup config init`, or pass --url https://your.shup.instance",
+      );
+    }
+    const created = await runSetup(file);
+    return { ...created, apiKey: apiKey ?? created.apiKey };
   }
 
   return { url: normalizeUrl(url), apiKey: apiKey ?? "" };
@@ -719,7 +726,9 @@ ${h("EXAMPLES")}
   ${c.gray("$")} git log | shup -t -c
 
 ${h("CONFIGURATION")}
+  The first run asks for your server URL and API key, then saves them to
   ${CONFIG_FILE}
+  Change them later with ${f("shup config init")} or ${f("shup config set")}.
   Environment: ${f("SHUP_URL")}, ${f("SHUP_API_KEY")}, ${f("SHUP_CONFIG")}, ${f("NO_COLOR")}
 `;
 }
@@ -1245,7 +1254,7 @@ async function uploadDirectory(path: string, session: Session, options: Options)
 }
 
 // ---------------------------------------------------------------------------
-// Config subcommand
+// Setup and config subcommand
 // ---------------------------------------------------------------------------
 
 function maskKey(key: string | undefined): string {
@@ -1260,6 +1269,46 @@ async function serverIsReachable(url: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function promptLine(message: string, fallback = ""): Promise<string> {
+  writeErr(message + (fallback ? ` ${c.gray(`[${fallback}]`)}` : "") + " ");
+  const buffer = new Uint8Array(1024);
+  const read = await Deno.stdin.read(buffer);
+  const value = read === null ? "" : decoder.decode(buffer.subarray(0, read)).trim();
+  return value || fallback;
+}
+
+/** Asks for a server and an API key, then writes them to the config file. */
+async function runSetup(existing: Partial<Config>): Promise<Config> {
+  writeErr(`\n  ${c.bold("Shup setup")} ${c.gray(CONFIG_FILE)}\n\n`);
+
+  const answer = await promptLine("  Server URL:", existing.url ?? "");
+  if (!answer) throw new CliError("A server URL is required.");
+
+  let url = normalizeUrl(answer);
+  let reachable = await serverIsReachable(url);
+
+  // Without a scheme the URL was assumed to be https, which local and LAN
+  // instances often do not serve. Fall back only if plain http answers.
+  if (!reachable && !/^https?:\/\//i.test(answer)) {
+    const insecure = url.replace(/^https:/, "http:");
+    reachable = await serverIsReachable(insecure);
+    if (reachable) url = insecure;
+  }
+
+  if (reachable) writeErr(`  ${c.green("✓")} ${url} is reachable\n`);
+  else warn(`Could not reach ${url}/up, saving anyway.`);
+
+  writeErr(`\n  ${c.gray("Find your API key on the Shup profile page.")}\n`);
+  writeErr(`  ${c.gray("Leave it blank to upload anonymously, if the server allows that.")}\n`);
+  const apiKey = await promptSecret("  API key: ");
+
+  const config: Config = { url, apiKey: apiKey || existing.apiKey || "" };
+  writeConfigFile(config);
+  writeErr(`\n  ${c.green("✓")} Saved to ${c.gray(CONFIG_FILE)}\n\n`);
+
+  return config;
 }
 
 async function configCommand(args: string[]): Promise<number> {
@@ -1293,22 +1342,9 @@ async function configCommand(args: string[]): Promise<number> {
       return 0;
     }
 
-    case "init": {
-      writeErr(`\n  ${c.bold("Shup setup")} ${c.gray(CONFIG_FILE)}\n\n`);
-      const answer = prompt("  Server URL", file.url ?? "https://") ?? "";
-      const url = normalizeUrl(answer);
-      if (!answer.trim() || url === "https://") throw new CliError("A server URL is required.");
-
-      if (await serverIsReachable(url)) info(`  ${c.green("✓")} ${url} is reachable`);
-      else warn(`Could not reach ${url}/up, saving anyway.`);
-
-      writeErr(`\n  ${c.gray("Find your API key on the Shup profile page. Leave blank for anonymous uploads.")}\n`);
-      const apiKey = await promptSecret("  API key: ");
-
-      writeConfigFile({ url, apiKey: apiKey || file.apiKey || "" });
-      info(`\n  ${c.green("✓")} Configuration saved.\n`);
+    case "init":
+      await runSetup(file);
       return 0;
-    }
 
     default:
       throw new CliError(`Unknown config action "${action}".`, "Use init, show, set or path.");
@@ -1345,10 +1381,13 @@ async function run(argv: string[]): Promise<number> {
     throw new CliError("Choose one of -t (text), -d (directory) or -s (short link).");
   }
 
+  // Parsed up front so a bad value fails before anything prompts for input.
+  const expires = validateExpiry(options.expires ? parseExpiry(options.expires) : undefined);
+
   const session: Session = {
-    config: resolveConfig({ url: options.url, apiKey: options.apiKey }),
+    config: await resolveConfig({ url: options.url, apiKey: options.apiKey }),
     password: (options.promptPassword ? await promptSecret("  Password: ") : options.password) || undefined,
-    expires: validateExpiry(options.expires ? parseExpiry(options.expires) : undefined),
+    expires,
   };
 
   if (options.short && session.password) {
