@@ -1,0 +1,8 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-net --allow-read --allow-write --allow-env --allow-run main.ts",
+    "install": "deno install --global --force --allow-net --allow-read --allow-write --allow-env --allow-run --name shup main.ts",
+    "compile": "deno compile --allow-net --allow-read --allow-write --allow-env --allow-run --output shup main.ts",
+    "check": "deno check main.ts"
+  }
+}

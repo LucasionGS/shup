@@ -8,6 +8,15 @@ use Illuminate\Http\Request;
 
 class ShortURLController extends Controller
 {
+    private function failure(Request $request, string $message, int $status)
+    {
+        if ($request->query("_back")) {
+            return back()->with("error", $message);
+        }
+
+        return response()->json(['error' => $message], $status);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -44,38 +53,39 @@ class ShortURLController extends Controller
         $_back = $request->query("_back");
         $customUrl = $request->input('custom_url', null);
 
-        if ($customUrl && $uploader && $uploader->isAdmin()) {
+        if ($customUrl) {
+            if (!$uploader || !$uploader->isAdmin()) {
+                return $this->failure($request, 'Custom URLs are restricted to administrators', 403);
+            }
+
             if (!preg_match('/^[a-zA-Z0-9-_]{1,20}$/', $customUrl)) {
-                if ($_back) {
-                    return back()->with("error", "Invalid custom URL");
-                }
-                return response()->json([
-                    'error' => 'Invalid custom URL'
-                ], 400);
+                return $this->failure($request, 'Invalid custom URL', 400);
             }
 
             if (ShortURL::where('short_code', $customUrl)->exists()) {
-                if ($_back) {
-                    return back()->with("error", "Custom URL already exists");
-                }
-                return response()->json([
-                    'error' => 'Custom URL already exists'
-                ], 400);
+                return $this->failure($request, 'Custom URL already exists', 400);
             }
         }
-        
-        urlCreation:
-        try {
-            /** @var ShortURL */
-            $shortURL = ShortURL::create([
-                'url' => $request->url,
-                'short_code' => $customUrl ?? $this->generateShortcode(),
-                'expires' => $expireDate,
-                'user_id' => $uploader?->id,
-                'size' => strlen($request->url)
-            ]);
-        } catch (\Throwable $th) {
-            goto urlCreation; // If the generated shortcode already exists, try again
+
+        /** @var ShortURL */
+        $shortURL = null;
+
+        for ($attempt = 0; $shortURL === null; $attempt++) {
+            try {
+                $shortURL = ShortURL::create([
+                    'url' => $request->url,
+                    'short_code' => $customUrl ?? $this->generateShortcode(),
+                    'expires' => $expireDate,
+                    'user_id' => $uploader?->id,
+                    'size' => strlen($request->url)
+                ]);
+            } catch (\Throwable $th) {
+                // A generated shortcode can collide, so try again with a new one.
+                // A custom one cannot be regenerated, and retrying would never end.
+                if ($customUrl || $attempt >= 9) {
+                    throw $th;
+                }
+            }
         }
 
         $url = url("/s/$shortURL->short_code");

@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             '/s', // Short URL creation
             '/f', // File upload
             '/p', // Paste creation
+            '/d', // Directory creation
+            '/d/*/-/upload', // Directory file upload
+            '/d/*/-/folders', // Directory folder creation
         ]);
 
         $middleware->appendToGroup('isAdmin', IsAdmin::class);

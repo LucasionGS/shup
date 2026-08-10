@@ -27,7 +27,13 @@ class FileController extends Controller
             }
         }
         else {
-            return redirect("/f/$shortCode/{$file->original_name}");
+            // Carry the query string across, otherwise ?password= is lost here
+            // and a protected file can never be fetched from its short URL.
+            $query = $request->getQueryString();
+
+            return redirect(
+                "/f/$shortCode/" . rawurlencode($file->original_name) . ($query ? "?$query" : '')
+            );
         }
 
         $password = $request->input('password') ?? $request->input("pwd") ?? null;
