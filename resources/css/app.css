@@ -106,6 +106,13 @@ select:disabled {
     @apply hidden sm:inline;
 }
 
+.update-badge {
+    @apply hidden items-center rounded-md px-2 py-1 text-xs font-semibold sm:inline-flex;
+    color: #3d2a00;
+    background: #f7c948;
+    box-shadow: 0 0 22px rgba(247, 201, 72, 0.18);
+}
+
 .nav-actions {
     @apply flex items-center justify-end gap-2 sm:gap-3;
 }

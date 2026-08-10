@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Support\UpdateChecker;
 use Illuminate\Support\Facades\Artisan;
 
 Artisan::command('shup:expired', function () {
@@ -22,6 +23,23 @@ Artisan::command('shup:expired', function () {
     // Delete expired invites
     $this->comment('Deleted ' . \App\Models\InvitedUsers::where('expires_at', '<', now())->delete() . ' expired invites');
 })->purpose('Runs through all the expirable items and deletes them')->everyMinute();
+
+Artisan::command('shup:check_updates {--force} {--fake}', function () {
+    $status = UpdateChecker::check((bool) $this->option('force') || $this->option('fake'));
+    
+    if ($this->option('fake')) {
+        $status["branch"] ??= "BRANCH";
+        $status["behind"] ??= 0;
+        $status["upstream"] ??= "UPSTREAM";
+    }
+    
+    if ($this->option('fake') || ($status['available'] ?? false)) {
+        $this->comment("Update available: {$status['branch']} is {$status['behind']} commit(s) behind {$status['upstream']}.");
+        return;
+    }
+
+    $this->comment('No update available. Status: ' . ($status['reason'] ?? 'unknown'));
+})->purpose('Check whether the current git branch is behind its upstream')->hourly()->withoutOverlapping();
 
 Artisan::command('shup:signup {action}', function ($action) {
     if ($action === 'enable') {

@@ -2,6 +2,7 @@
 <html lang="en">
 @php
     $appTitle = App\Models\Configuration::appTitle();
+    $updateStatus = App\Support\UpdateChecker::cachedStatus();
 @endphp
 <head>
     <meta charset="UTF-8">
@@ -32,6 +33,14 @@
             <a href="{{ url('/') }}" class="header-logo">
                 @include('partials.app-mark', ['class' => 'header-logo-mark', 'alt' => ''])
                 <span class="header-logo-text">{{ $appTitle }}</span>
+                @auth
+                    @if (auth()->user()->isAdmin() && ($updateStatus['available'] ?? false))
+                        <span
+                            class="update-badge"
+                            title="{{ $updateStatus['branch'] ?? 'Current branch' }} is {{ $updateStatus['behind'] ?? 0 }} commit(s) behind {{ $updateStatus['upstream'] ?? 'upstream' }}"
+                        >Update available</span>
+                    @endif
+                @endauth
             </a>
             <div class="nav-actions">
                 @auth
