@@ -4,7 +4,7 @@
 
 @php
     $user = auth()->user();
-    $avatarInitial = strtoupper(substr($user->name ?: $user->email ?: env("APP_NAME"), 0, 1));
+    $avatarInitial = strtoupper(substr($user->name ?: $user->email ?: config('app.name'), 0, 1));
     $filesCount = \App\Models\File::where('user_id', $user->id)->count();
     $urlsCount = \App\Models\ShortURL::where('user_id', $user->id)->count();
     $pasteBinsCount = \App\Models\PasteBin::where('user_id', $user->id)->count();
@@ -174,7 +174,11 @@
                 </div>
             </div>
 
-            <a href="{{ route('resetapi') }}" class="btn-danger" onclick="return confirm('Reset your API key? Existing integrations will stop working.');">Reset API Key</a>
+            <form action="{{ route('resetapi') }}" method="POST" class="inline"
+                onsubmit="return confirm('Reset your API key? Existing integrations will stop working.');">
+                @csrf
+                <button type="submit" class="btn-danger">Reset API Key</button>
+            </form>
         </div>
 
         <div class="surface-card form-stack">

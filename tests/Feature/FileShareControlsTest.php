@@ -8,11 +8,22 @@ use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class FileShareControlsTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Without this the test wrote into the real storage directory and
+        // relied on cleaning up afterwards, which leaked a blob whenever an
+        // assertion failed part-way through.
+        Storage::fake('local');
+    }
 
     public function test_file_upload_form_exposes_share_controls(): void
     {
@@ -54,16 +65,5 @@ class FileShareControlsTest extends TestCase
         $download = $this->get("/f/{$file->short_code}/{$file->original_name}?pwd=swordfish");
 
         $download->assertOk();
-
-        $this->deleteStoredFile($file);
-    }
-
-    private function deleteStoredFile(File $file): void
-    {
-        $path = storage_path("app/private/files/$file->short_code");
-
-        if (is_file($path)) {
-            unlink($path);
-        }
     }
 }

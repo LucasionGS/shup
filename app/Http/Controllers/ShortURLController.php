@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesApiUser;
 use App\Models\ShortURL;
 use App\Models\User;
 use Illuminate\Http\Request;
 
 class ShortURLController extends Controller
 {
+    use ResolvesApiUser;
+
     private function failure(Request $request, string $message, int $status)
     {
         if ($request->query("_back")) {
@@ -22,15 +25,19 @@ class ShortURLController extends Controller
      */
     public function store(Request $request)
     {
+        // Restricted to http/https: the default url rule also accepts data:,
+        // file: and view-source:, which turned the redirector into a launcher
+        // for those schemes.
         $request->validate([
-            'url' => 'required|url'
+            'url' => 'required|url:http,https|max:2048'
         ]);
 
-        $potentialBearer = $request->header('Authorization') ?? null;
         /** @var User|null */
-        $uploader = $request->user() ?? (
-            $potentialBearer ? User::firstWhere('api_token', $potentialBearer) : null
-        ) ?? null;
+        $uploader = $this->resolveApiUser($request);
+
+        // /s never honoured the allow_anonymous_upload setting, so anyone could
+        // mint redirects on this domain even with anonymous uploads disabled.
+        if ($authRes = $this->rejectIfNotAuthenticatedIfNeeded($uploader)) { return $authRes; }
 
         /** @var int|null */
         $expiresMins = $request->input('expires', null);
@@ -100,19 +107,23 @@ class ShortURLController extends Controller
 
     public function redirect(string $shortCode)
     {
+        // Expired links stayed live until the cron sweep happened to remove them.
         /** @var ShortURL */
-        $shortURL = ShortURL::where('short_code', $shortCode)->firstOrFail();
+        $shortURL = ShortURL::where('short_code', $shortCode)
+            ->where(function ($query) {
+                $query->whereNull('expires')->orWhere('expires', '>', now());
+            })
+            ->firstOrFail();
+
         $shortURL->increment('hits');
-        return redirect($shortURL->url);
+
+        return redirect()->away($shortURL->url);
     }
 
     public function destroy(Request $request, string $shortCode)
     {
-        $potentialBearer = $request->header('Authorization') ?? null;
         /** @var User|null */
-        $uploader = $request->user() ?? (
-            $potentialBearer ? User::firstWhere('api_token', $potentialBearer) : null
-        ) ?? null;
+        $uploader = $this->resolveApiUser($request);
 
         /** @var ShortURL */
         $shortURL = ShortURL::where('short_code', $shortCode)->firstOrFail();

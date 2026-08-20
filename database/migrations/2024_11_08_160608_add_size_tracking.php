@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('files', function (Blueprint $table) {
-            $table->unsignedBigInteger('size')->default(0)->after('mime_type');
+            // The column is `mime`, not `mime_type`. SQLite ignores ->after()
+            // so this went unnoticed, but it is fatal on MySQL/MariaDB.
+            $table->unsignedBigInteger('size')->default(0)->after('mime');
         });
 
         Schema::table('paste_bins', function (Blueprint $table) {

@@ -15,9 +15,18 @@ class IsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user()->isAdmin()) {
+        // Null-safe: this middleware is currently always paired with `auth`, but
+        // on its own it would fatal rather than deny.
+        $user = $request->user();
+
+        if (!$user) {
+            return redirect(route('login'));
+        }
+
+        if (!$user->isAdmin()) {
             return redirect(route('dashboard'));
         }
+
         return $next($request);
     }
 }

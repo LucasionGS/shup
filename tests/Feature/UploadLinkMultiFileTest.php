@@ -16,6 +16,15 @@ class UploadLinkMultiFileTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Applied to every test here rather than to some of them: the
+        // single-file cases wrote real blobs into storage/app/private.
+        Storage::fake('local');
+    }
+
     public function test_user_can_create_a_multi_file_upload_link(): void
     {
         $user = User::factory()->create();
@@ -46,8 +55,6 @@ class UploadLinkMultiFileTest extends TestCase
 
     public function test_multiple_files_become_a_directory(): void
     {
-        Storage::fake('local');
-
         $user = User::factory()->create();
         $link = UploadLink::create([
             'short_code' => 'mlink1',
@@ -109,8 +116,6 @@ class UploadLinkMultiFileTest extends TestCase
 
     public function test_duplicate_names_are_made_unique(): void
     {
-        Storage::fake('local');
-
         $user = User::factory()->create();
         $link = UploadLink::create([
             'short_code' => 'mlink3',
@@ -152,8 +157,6 @@ class UploadLinkMultiFileTest extends TestCase
 
     public function test_password_protects_the_created_directory(): void
     {
-        Storage::fake('local');
-
         $user = User::factory()->create();
         $link = UploadLink::create([
             'short_code' => 'mlink4',

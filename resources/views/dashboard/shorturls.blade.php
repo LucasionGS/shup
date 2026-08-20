@@ -4,7 +4,13 @@
 
 @php
     $user = auth()->user();
-    $shortUrls = \App\Models\ShortURL::where('user_id', $user->id)->get();
+
+    // Paged rather than loading every row: this listing grows without bound.
+    $shortUrlQuery = \App\Models\ShortURL::where('user_id', $user->id)->orderBy('created_at', 'desc');
+    $count = $shortUrlQuery->count();
+    $pageSize = 15;
+    $page = max(0, (int) request()->query("page", 0));
+    $shortUrls = $shortUrlQuery->limit($pageSize)->offset($page * $pageSize)->get();
 @endphp
 
 <div class="app-panel">
@@ -111,6 +117,18 @@
                     </tbody>
                 </table>
             </div>
+
+            @if($count > $pageSize)
+                <div class="flex items-center justify-center gap-3 mt-4">
+                    @if($page > 0)
+                        <a href="{{ request()->fullUrlWithQuery(['page' => $page - 1]) }}" class="btn-secondary btn-small">Previous</a>
+                    @endif
+                    <span class="muted-text text-sm">Page {{ $page + 1 }}</span>
+                    @if($count > ($page + 1) * $pageSize)
+                        <a href="{{ request()->fullUrlWithQuery(['page' => $page + 1]) }}" class="btn-secondary btn-small">Next</a>
+                    @endif
+                </div>
+            @endif
         @endif
     </div>
 

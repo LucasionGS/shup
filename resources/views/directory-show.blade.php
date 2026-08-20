@@ -144,7 +144,9 @@
                     @if($item->isFolder())
                         <span class="directory-row__icon">Folder</span>
                     @elseif(str_starts_with($item->mime ?? '', 'image/'))
-                        <img src="{{ $directoryPreviewUrl($item->path) }}" class="file-preview directory-media-preview directory-media-preview--image" alt="">
+                        {{-- Thumbnail rather than the original: a folder of photos
+                             otherwise transferred every full-size image to draw a row of icons. --}}
+                        <img src="{{ $directoryPreviewUrl($item->path) }}&thumb=1" class="file-preview directory-media-preview directory-media-preview--image" alt="" loading="lazy" decoding="async">
                     @elseif(str_starts_with($item->mime ?? '', 'audio/'))
                         <audio src="{{ $directoryPreviewUrl($item->path) }}" class="file-preview directory-media-preview directory-media-preview--audio" controls preload="metadata"></audio>
                     @elseif(str_starts_with($item->mime ?? '', 'video/'))

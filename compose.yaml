@@ -1,0 +1,122 @@
+# Shup — self-contained stack.
+#
+# TLS is expected to terminate at a reverse proxy in front of this stack, so
+# `web` speaks plain HTTP on the host port set by SHUP_HTTP_PORT. Point your
+# existing nginx/Caddy/Traefik at it and forward X-Forwarded-* headers.
+
+name: shup
+
+services:
+  app:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    env_file:
+      - .env.docker
+    volumes:
+      # Uploaded blobs. This is the volume to back up.
+      - shup-storage:/var/www/html/storage/app
+      # Published to nginx by the entrypoint on every start, so a rebuilt image
+      # cannot leave nginx serving stale assets.
+      - shup-public:/srv/public
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(0);"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "${SHUP_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # nginx serves public/ directly and needs the same storage mount so
+      # X-Accel-Redirect can hand off large downloads without holding a PHP
+      # worker for the whole transfer.
+      - shup-public:/var/www/html/public:ro
+      - shup-storage:/var/www/html/storage/app:ro
+    healthcheck:
+      # 127.0.0.1 rather than localhost: nginx listens on IPv4 only, while
+      # localhost resolves to ::1 first inside the container, which made this
+      # check fail with "connection refused" against a perfectly healthy site.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    # Credentials come from the env file rather than ${...} interpolation:
+    # compose interpolates from .env, which here is the local development
+    # config, so the MARIADB_* names are defined in .env.docker alongside the
+    # matching DB_* names the application reads.
+    env_file:
+      - .env.docker
+    volumes:
+      - shup-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - shup-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Processes thumbnails and queued mail.
+  queue:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.docker
+    volumes:
+      - shup-storage:/var/www/html/storage/app
+    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--max-time=3600"]
+
+  # Runs the expiry sweep and the update check on their registered schedules.
+  scheduler:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+      db:
+        condition: service_healthy
+    env_file:
+      - .env.docker
+    volumes:
+      - shup-storage:/var/www/html/storage/app
+    command: ["php", "artisan", "schedule:work"]
+
+volumes:
+  shup-db:
+  shup-redis:
+  shup-storage:
+  shup-public:

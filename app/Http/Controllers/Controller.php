@@ -3,43 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuration;
+use App\Models\File;
 use App\Models\User;
+use App\Support\PasswordCrypto;
 use Illuminate\Http\JsonResponse;
 
 abstract class Controller
 {
-    public function generateShortcode() {
+    /**
+     * Generate a short code using a cryptographically secure RNG.
+     *
+     * Uses random_int() (CSPRNG) rather than rand() so codes cannot be
+     * predicted from observed values, and widens the default to 10 base62
+     * characters (~62^10 space). Existing shorter codes still resolve because
+     * lookups are exact-match, so widening is backwards compatible.
+     */
+    public function generateShortcode(int $length = 10) {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);
         $randomString = '';
-        for ($i = 0; $i < 6; $i++) {
-            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[random_int(0, $charactersLength - 1)];
         }
         return $randomString;
     }
 
     protected function encryptData(string $content, string $key) {
-        // Generate a random initialization vector
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('aes-256-cbc'));        
-        // Encrypt the plaintext with AES-256 using CBC mode
-        $ciphertext = openssl_encrypt($content, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
-        // Combine the IV and ciphertext for storage
-        $encryptedData = $iv . $ciphertext;
-        // Encode the encrypted data in base64 format for transmission/storage
-        $encryptedData = base64_encode($encryptedData);
-        return $encryptedData;
+        return PasswordCrypto::encrypt($content, $key);
     }
 
     protected function decryptData(string $encryptedData, string $key) {
-        // Decode the encrypted data from base64 format
-        $encryptedData = base64_decode($encryptedData);
-        // Extract the initialization vector from the encrypted data
-        $iv = substr($encryptedData, 0, openssl_cipher_iv_length('aes-256-cbc'));
-        // Extract the ciphertext from the encrypted data
-        $ciphertext = substr($encryptedData, openssl_cipher_iv_length('aes-256-cbc'));
-        // Decrypt the ciphertext using AES-256 with CBC mode
-        $plaintext = openssl_decrypt($ciphertext, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
-        return $plaintext;
+        return PasswordCrypto::decrypt($encryptedData, $key);
     }
 
     protected function rejectIfNotAuthenticated(?User $user = null): JsonResponse|null {
@@ -48,6 +42,41 @@ abstract class Controller
         }
 
         return null;
+    }
+
+    /**
+     * Per-upload ceiling in kilobytes, for use in `max:` validation rules.
+     *
+     * Falls back to PHP's own upload_max_filesize so the rule never claims to
+     * allow more than the runtime will actually accept.
+     */
+    protected function maxUploadKilobytes(): int {
+        $configured = (int) Configuration::getValue('max_upload_bytes', 0);
+        $phpLimit = File::expandPHPFileSize((string) ini_get('upload_max_filesize'));
+
+        $limits = array_filter([$configured, $phpLimit], fn ($value) => $value > 0);
+        $bytes = $limits === [] ? $phpLimit : min($limits);
+
+        return max(1, (int) floor($bytes / 1024));
+    }
+
+    /**
+     * Reject an upload that would push the user past their storage quota.
+     *
+     * The quota was previously only ever displayed: nothing compared
+     * storage_used against storage_limit, so any user could fill the disk.
+     * Anonymous uploads have no quota to charge and are left to the per-upload
+     * size ceiling instead.
+     */
+    protected function rejectIfOverQuota(?User $user, int $bytes): JsonResponse|null {
+        if (!$user || $user->canStore($bytes)) {
+            return null;
+        }
+
+        return response()->json([
+            'error' => 'Storage quota exceeded.',
+            'remaining' => $user->remainingStorage(),
+        ], 413);
     }
 
     protected function rejectIfNotAuthenticatedIfNeeded(?User $user = null): JsonResponse|null {

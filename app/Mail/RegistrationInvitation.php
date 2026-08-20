@@ -29,7 +29,7 @@ class RegistrationInvitation extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'You have been invited to register for a ' . env('APP_NAME') . ' instance',
+            subject: 'You have been invited to register for a ' . config('app.name') . ' instance',
         );
     }
 

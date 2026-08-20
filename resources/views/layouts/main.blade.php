@@ -2,7 +2,6 @@
 <html lang="en">
 @php
     $appTitle = App\Models\Configuration::appTitle();
-    $updateStatus = App\Support\UpdateChecker::cachedStatus();
 @endphp
 <head>
     <meta charset="UTF-8">
@@ -34,11 +33,19 @@
                 @include('partials.app-mark', ['class' => 'header-logo-mark', 'alt' => ''])
                 <span class="header-logo-text">{{ $appTitle }}</span>
                 @auth
-                    @if (auth()->user()->isAdmin() && ($updateStatus['available'] ?? false))
-                        <span
-                            class="update-badge"
-                            title="{{ $updateStatus['branch'] ?? 'Current branch' }} is {{ $updateStatus['behind'] ?? 0 }} commit(s) behind {{ $updateStatus['upstream'] ?? 'upstream' }}"
-                        >Update available</span>
+                    {{-- Only administrators can see this badge, so the cache
+                         lookup is done inside the check rather than on every
+                         render for every visitor. --}}
+                    @if (auth()->user()->isAdmin())
+                        @php
+                            $updateStatus = App\Support\UpdateChecker::cachedStatus();
+                        @endphp
+                        @if ($updateStatus['available'] ?? false)
+                            <span
+                                class="update-badge"
+                                title="{{ $updateStatus['branch'] ?? 'Current branch' }} is {{ $updateStatus['behind'] ?? 0 }} commit(s) behind {{ $updateStatus['upstream'] ?? 'upstream' }}"
+                            >Update available</span>
+                        @endif
                     @endif
                 @endauth
             </a>
@@ -46,10 +53,10 @@
                 @auth
                     @php
                         $user = auth()->user();
-                        $avatarInitial = strtoupper(substr($user->name ?: $user->email ?: env("APP_NAME"), 0, 1));
+                        $avatarInitial = strtoupper(substr($user->name ?: $user->email ?: config('app.name'), 0, 1));
                     @endphp
                     @if ($user->isAdmin())
-                        <a href="{{ url('/admin/users') }}" class="auth-button">Admin</a>
+                        <a href="{{ route('admin.dashboard') }}" class="auth-button">Admin</a>
                     @endif
                     <a href="{{ route('files') }}" class="auth-button nav-optional">Files</a>
                     <a href="{{ route('directories') }}" class="auth-button nav-optional">Directories</a>
@@ -100,7 +107,9 @@
                                 },
                                 {
                                     label: "Logout",
-                                    url: "{{ route('logout') }}"
+                                    // Logout is a POST so it cannot be triggered
+                                    // cross-site; submit the hidden form below.
+                                    form: "logout-form"
                                 }
                             ];
 
@@ -108,11 +117,18 @@
 
                             for (let i = 0; i < list.length; i++) {
                                 const item = list[i];
-                                const a = document.createElement(item.url ? "a" : "div");
+                                const a = document.createElement(item.url || item.form ? "a" : "div");
                                 a.classList.add("user-profile-menu--item");
                                 a.textContent = item.label;
                                 if (item.url) {
                                     a.href = item.url;
+                                }
+                                else if (item.form) {
+                                    a.href = "#";
+                                    a.addEventListener("click", function (event) {
+                                        event.preventDefault();
+                                        document.getElementById(item.form)?.submit();
+                                    });
                                 }
 
                                 div.appendChild(a);
@@ -164,5 +180,11 @@
     <footer class="footer">
         Powered by Shup
     </footer>
+
+    @auth
+        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+            @csrf
+        </form>
+    @endauth
 </body>
 </html>

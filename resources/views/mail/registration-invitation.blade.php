@@ -1,7 +1,7 @@
 <x-mail::message>
-# You have been invited to join {{ env('APP_NAME') }}!
+# You have been invited to join {{ config('app.name') }}!
 
-You have been invited to join a {{ env('APP_NAME') }} instance. Click the button below to sign up.
+You have been invited to join a {{ config('app.name') }} instance. Click the button below to sign up.
 <br>
 <a href="{{ $url }}">
   <button style="background-color: #3490dc; color: white; padding: 10px 20px; border-radius: 5px; border: none;">

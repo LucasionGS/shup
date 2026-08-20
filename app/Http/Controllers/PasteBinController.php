@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesApiUser;
 use App\Models\PasteBin;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 
 class PasteBinController extends Controller
 {
+    use ResolvesApiUser;
+
     /**
      * Store a newly created paste bin.
      */
@@ -20,16 +23,24 @@ class PasteBinController extends Controller
             'expires' => 'nullable|integer',
         ]);
 
-        $potentialBearer = $request->header('Authorization') ?? null;
         /** @var User|null */
-        $uploader = $request->user() ?? (
-            $potentialBearer ? User::firstWhere('api_token', $potentialBearer) : null
-        ) ?? null;
+        $uploader = $this->resolveApiUser($request);
+
+        // /p never honoured the allow_anonymous_upload setting, so anonymous
+        // paste creation stayed open even when the instance disabled it.
+        if ($authRes = $this->rejectIfNotAuthenticatedIfNeeded($uploader)) { return $authRes; }
 
         $password = $request->input('password') ?? $request->input('pwd') ?? null;
-        $shortCode = $this->generateShortCode();
 
         $content = $request->input('content');
+
+        if ($quotaRes = $this->rejectIfOverQuota($uploader, strlen($content))) {
+            return $quotaRes;
+        }
+
+        do {
+            $shortCode = $this->generateShortCode();
+        } while (PasteBin::where('short_code', $shortCode)->exists());
 
         // Encrypt content if password is provided
         if ($password) {
@@ -120,20 +131,18 @@ class PasteBinController extends Controller
     {
         $pasteBin = PasteBin::where('short_code', $shortCode)->firstOrFail();
 
-        $potentialBearer = $request->header('Authorization') ?? null;
         /** @var User|null */
-        $user = $request->user() ?? (
-            $potentialBearer ? User::firstWhere('api_token', $potentialBearer) : null
-        ) ?? null;
+        $user = $this->resolveApiUser($request);
 
         $password = $request->input('password') ?? $request->input('pwd') ?? null;
-        $forced = $request->input('force') === '1';
 
-        if ($forced && $user && $user->id === $pasteBin->user_id) {
+        if ($user && $pasteBin->user_id && $user->id === $pasteBin->user_id) {
             // User is authenticated and owns the paste bin
         } elseif ($pasteBin->password) {
-            // Paste bin is password protected
-            if (!$password || $password !== $pasteBin->password) {
+            // Paste bin is password protected. This compared the submitted
+            // plaintext against the stored bcrypt hash, so it never matched and
+            // protected pastes could not be deleted at all.
+            if (!$password || !Hash::check($password, $pasteBin->password)) {
                 return response()->json(['error' => 'Invalid password'], 403);
             }
         } else {

@@ -14,7 +14,97 @@ Shup is a self-hosted upload platform that allows you to upload files easily to 
 - Limit per-user storage space.
 - ...and more to come!
 
-## Installation
+## Running with Docker (recommended)
+
+The bundled stack runs everything Shup needs: PHP-FPM, nginx, MariaDB, Redis, a
+queue worker, and the scheduler. TLS is expected to terminate at a reverse proxy
+in front of the stack, so nginx here speaks plain HTTP on a single host port.
+
+### First run
+
+```bash
+cp .env.docker.example .env.docker
+
+# Generate an application key and paste it into .env.docker as APP_KEY
+docker compose run --rm app php artisan key:generate --show
+
+# Then set at minimum: APP_URL, DB_PASSWORD / MARIADB_PASSWORD,
+# and MARIADB_ROOT_PASSWORD.
+
+docker compose up -d --build
+```
+
+The app is then served on `http://localhost:8080`; point your reverse proxy at
+that port and forward the `X-Forwarded-*` headers. The first account registered
+becomes the administrator.
+
+> **Note on `SHUP_HTTP_PORT`.** Docker Compose interpolates `${...}` from the
+> `.env` file in this directory (the local development config), *not* from
+> `.env.docker`. To change the published port, either export it
+> (`SHUP_HTTP_PORT=9000 docker compose up -d`) or run compose with
+> `--env-file .env.docker`. Everything else is read inside the containers from
+> `.env.docker` and needs no such handling.
+
+### Migrating an existing (SQLite) install into Docker
+
+Both the database rows and the uploaded blobs need to move. Short codes and
+on-disk file names are unchanged, so every existing share link keeps working.
+
+```bash
+# 1. Start the database and bring up the stack. The app container runs
+#    `php artisan migrate` on boot, creating the schema in MariaDB.
+docker compose up -d --build
+
+# 2. Copy the old SQLite database into the container and import it.
+docker compose cp database/database.sqlite app:/tmp/legacy.sqlite
+docker compose exec app php artisan shup:migrate-sqlite /tmp/legacy.sqlite --truncate
+
+# 3. Copy the uploaded files into the storage volume.
+docker compose cp storage/app/private/. app:/var/www/html/storage/app/private/
+docker compose exec app chown -R www-data:www-data storage/app
+
+# 4. Reconcile the storage counters.
+docker compose exec app php artisan shup:recalculate_storage
+docker compose exec app php artisan shup:recalculate_physical_storage
+```
+
+`shup:migrate-sqlite` copies table by table in foreign-key-safe order through
+the query builder rather than replaying a SQLite dump, because the two engines
+disagree on types, quoting and booleans. It also carries API tokens across into
+the current hashed-plus-encrypted storage, so existing CLI and ShareX
+configurations continue to authenticate without being reissued.
+
+Verify before cutting over the proxy:
+
+```bash
+curl -sI http://localhost:8080/up          # expect 200
+docker compose exec app php artisan shup:role you@example.com   # confirm Admin
+```
+
+### Day-to-day
+
+```bash
+docker compose logs -f app            # application log
+docker compose exec app php artisan   # any artisan command
+docker compose down                   # stop (volumes are preserved)
+```
+
+> `docker compose exec` runs as **root**, while PHP-FPM serves requests as
+> `www-data`. Any artisan command that *writes* into `storage` should therefore
+> run as the web user, otherwise it can leave files the application cannot read
+> back:
+>
+> ```bash
+> docker compose exec -u www-data app php artisan <command>
+> ```
+>
+> Read-only commands are fine either way, and the entrypoint re-applies
+> ownership to `storage` on every start.
+
+Back up the `shup-storage` volume (uploaded files) and the `shup-db` volume
+(database) together; restoring one without the other leaves dangling records.
+
+## Manual installation
 As of now, Shup is not yet ready for production use. However, you can still install it for testing purposes or if you are prepared to deal with potential bugs and issues. (Reports and contributions are welcome!)
 
 ### Requirements

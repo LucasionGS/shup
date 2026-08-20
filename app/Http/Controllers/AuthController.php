@@ -4,11 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Mail\RegistrationInvitation;
 use App\Models\Configuration;
+use App\Models\Directory;
 use App\Models\File;
 use App\Models\InvitedUsers;
+use App\Models\PasteBin;
+use App\Models\ShortURL;
+use App\Models\UploadLink;
+use App\Models\UploadSession;
 use App\Models\User;
 use Auth;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Mail;
 use Symfony\Component\Uid\UuidV4;
 
@@ -71,36 +77,41 @@ class AuthController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
-                'api_token' => UuidV4::v4(),
                 'role' => User::ROLE_USER,
             ]);
-    
+
+            $user->issueApiToken();
+            $user->save();
+
             auth()->login($user);
-    
+
             return redirect()->intended('dashboard');
         }
 
-        $role = User::ROLE_USER;
-        
+        // `$firstUser = User::first() && !$allow_signup` assigned the boolean
+        // result of the && to $firstUser, so it was never null and the
+        // first-user-is-admin branch was unreachable, leaving a fresh instance
+        // with no administrator.
+        $firstUser = User::first();
         $allow_signup = Configuration::getBool("allow_signup", false);
-        if ($firstUser = User::first() && !$allow_signup) {
+
+        if ($firstUser !== null && !$allow_signup) {
             return back()->withErrors([
                 'email' => 'Registration is disabled.',
             ]);
         }
-        else {
-            if ($firstUser === null) {
-                $role = User::ROLE_ADMIN;
-            }
-        }
-        
+
+        $role = $firstUser === null ? User::ROLE_ADMIN : User::ROLE_USER;
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => bcrypt($request->password),
-            'api_token' => UuidV4::v4(),
-            'role' => $role ?? User::ROLE_USER,
+            'role' => $role,
         ]);
+
+        $user->issueApiToken();
+        $user->save();
 
         auth()->login($user);
 
@@ -113,7 +124,7 @@ class AuthController extends Controller
     public function resetApiToken(Request $request)
     {
         $user = Auth::user();
-        $user->api_token = UuidV4::v4();
+        $user->issueApiToken();
         $user->save();
 
         return redirect()->back()->with('account_info', 'API key reset.');
@@ -155,6 +166,19 @@ class AuthController extends Controller
             abort(403);
         }
         
+        // name/email were previously written unvalidated, so a duplicate email
+        // surfaced the raw driver exception to the user (see the catch below).
+        $request->validate([
+            'name' => 'sometimes|nullable|string|max:255',
+            'email' => [
+                'sometimes',
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($user->id),
+            ],
+        ]);
+
         $userData = $request->only(
             'name',
             'email',
@@ -227,8 +251,10 @@ class AuthController extends Controller
         try {
             $user->update($userData);
         } catch (\Throwable $th) {
+            report($th);
+
             return back()->withErrors([
-                'error' => "Failed to update user $user->name: " . $th->getMessage(),
+                'error' => "Failed to update user $user->name.",
             ]);
         }
 
@@ -344,9 +370,60 @@ class AuthController extends Controller
                 ->with("invite_info", "$email has been invited: $url");
         }
 
-        
+
         return response()->json([
             'token' => $token,
         ]);
+    }
+
+    /**
+     * Delete a user and everything they uploaded.
+     *
+     * The admin console has always rendered a delete button, but no route
+     * existed behind it, so it returned 405. Content is expired individually
+     * rather than mass-deleted so the blobs on disk go with the rows.
+     */
+    public function destroy(Request $request, User $user)
+    {
+        /** @var User */
+        $authUser = Auth::user();
+
+        if (!$authUser->isAdmin()) {
+            abort(403);
+        }
+
+        if ($authUser->id === $user->id) {
+            return back()->withErrors(['error' => 'You cannot delete your own account.']);
+        }
+
+        // Never leave an instance with no administrator.
+        if ($user->isAdmin() && User::where('role', User::ROLE_ADMIN)->count() <= 1) {
+            return back()->withErrors(['error' => 'This is the only administrator account.']);
+        }
+
+        foreach (File::where('user_id', $user->id)->cursor() as $file) {
+            $file->expire();
+        }
+
+        foreach (Directory::where('user_id', $user->id)->cursor() as $directory) {
+            $directory->expire();
+        }
+
+        PasteBin::where('user_id', $user->id)->delete();
+        ShortURL::where('user_id', $user->id)->delete();
+        UploadLink::where('user_id', $user->id)->delete();
+
+        foreach (UploadSession::where('user_id', $user->id)->cursor() as $session) {
+            $session->expire();
+        }
+
+        $name = $user->name;
+        $user->delete();
+
+        if ($request->query("_back")) {
+            return back()->with('account_info', "$name and all of their content were deleted.");
+        }
+
+        return response()->json(['message' => 'User deleted'], 204);
     }
 }

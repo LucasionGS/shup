@@ -6,6 +6,14 @@
     <h2 class="text-2xl font-semibold mb-2">Login to Your Account</h2>
     <p class="panel-subtitle mb-6 text-center">Access your file vault, short links, paste bins, and upload links.</p>
 
+    @if (session('status'))
+        <div class="alert-success mb-4" role="alert">{{ session('status') }}</div>
+    @endif
+
+    @if ($errors->any())
+        <div class="alert-error mb-4" role="alert">{{ $errors->first() }}</div>
+    @endif
+
     <form method="POST" action="{{ route('login') }}" class="form-stack">
         @csrf
         <div>

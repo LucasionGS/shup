@@ -14,6 +14,8 @@ Artisan::command('shup:expired', function () {
         \App\Models\PasteBin::class,
         \App\Models\ShortURL::class,
         \App\Models\Directory::class,
+        // Abandoned resumable uploads, so partial files are not left on disk.
+        \App\Models\UploadSession::class,
     ];
 
     foreach ($models as $model) {

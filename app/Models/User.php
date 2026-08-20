@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Symfony\Component\Uid\UuidV4;
 
 class User extends Authenticatable
 {
@@ -21,7 +22,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'api_token',
         'storage_limit',
         'storage_used',
         'role',
@@ -135,6 +135,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'api_token_hash',
+        'api_token_encrypted',
     ];
 
     /**
@@ -147,7 +149,99 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'api_token_encrypted' => 'encrypted',
+            'api_token_last_used_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Issue a fresh API token, storing only its hash plus an APP_KEY-encrypted
+     * copy. Returns the plaintext so the caller can show it to the user.
+     */
+    public function issueApiToken(): string
+    {
+        $token = (string) UuidV4::v4();
+
+        $this->api_token_hash = self::hashApiToken($token);
+        $this->api_token_encrypted = $token;
+
+        return $token;
+    }
+
+    /**
+     * The plaintext API token, decrypted for display. Null when no token is set
+     * or when it cannot be decrypted (for example after an APP_KEY rotation).
+     */
+    public function getApiTokenAttribute(): ?string
+    {
+        try {
+            return $this->api_token_encrypted;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * A storage_limit of 0 means unlimited.
+     */
+    public function hasUnlimitedStorage(): bool
+    {
+        return (int) $this->storage_limit === 0;
+    }
+
+    /**
+     * Bytes still available to this user, or null when unlimited.
+     */
+    public function remainingStorage(): ?int
+    {
+        if ($this->hasUnlimitedStorage()) {
+            return null;
+        }
+
+        return max(0, (int) $this->storage_limit - (int) $this->storage_used);
+    }
+
+    /**
+     * Whether this user may store an additional $bytes without exceeding quota.
+     */
+    public function canStore(int $bytes): bool
+    {
+        $remaining = $this->remainingStorage();
+
+        return $remaining === null || $bytes <= $remaining;
+    }
+
+    /**
+     * Hash an API token for storage/lookup. Tokens are high-entropy UUIDs, so a
+     * single SHA-256 pass is sufficient (no need for a slow password hash) and
+     * keeps lookups a plain indexed equality match.
+     */
+    public static function hashApiToken(string $token): string
+    {
+        return hash('sha256', $token);
+    }
+
+    /**
+     * Resolve a user from a raw API token, accepting an optional "Bearer "
+     * prefix so both the CLI (bare token) and standards-compliant clients work.
+     */
+    public static function findByApiToken(?string $rawToken): ?User
+    {
+        if (!$rawToken) {
+            return null;
+        }
+
+        $token = trim($rawToken);
+
+        if (stripos($token, 'bearer ') === 0) {
+            $token = trim(substr($token, 7));
+        }
+
+        if ($token === '') {
+            return null;
+        }
+
+        return static::firstWhere('api_token_hash', static::hashApiToken($token));
     }
 
     public function calculateStorage(

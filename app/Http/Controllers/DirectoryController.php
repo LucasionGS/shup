@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\ResolvesApiUser;
 use App\Models\Directory;
 use App\Models\DirectoryItem;
 use App\Models\User;
 use App\Support\StreamingZip;
+use App\Support\Thumbnailer;
 use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -16,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 
 class DirectoryController extends Controller
 {
+    use ResolvesApiUser;
+
     public function store(Request $request)
     {
         $request->validate([
@@ -259,6 +263,16 @@ class DirectoryController extends Controller
             ->values();
         $downloadName = $this->zipDownloadName($directory, $currentPath);
 
+        // A large archive can take longer than max_execution_time to stream,
+        // and the session file stays locked for the whole response unless it is
+        // written back first, which would block the user's other tabs.
+        @set_time_limit(0);
+        ignore_user_abort(false);
+
+        if ($request->hasSession()) {
+            $request->session()->save();
+        }
+
         return response()->streamDownload(function () use ($folders, $files, $currentPath) {
             $zip = new StreamingZip();
 
@@ -297,7 +311,36 @@ class DirectoryController extends Controller
         }
 
         $files = array_values($files);
+
+        // Charge the whole batch against the owner's quota up front, so a large
+        // folder cannot slip past a check made one file at a time.
+        $incoming = 0;
+        foreach ($files as $uploadedFile) {
+            if ($uploadedFile instanceof UploadedFile) {
+                $incoming += $uploadedFile->getSize() ?? 0;
+            }
+        }
+
+        $owner = $directory->user_id ? User::find($directory->user_id) : null;
+
+        if ($owner && !$owner->canStore($incoming)) {
+            throw ValidationException::withMessages([
+                'files' => 'This upload would exceed the storage quota.',
+            ]);
+        }
+
         $uploadedCount = 0;
+
+        // Uploading a folder used to cost roughly 4-6 queries per file: a
+        // refresh/save of the directory and the user for every single file, plus
+        // an unmemoised lookup per path segment. The size delta is now
+        // accumulated and applied once, folders created during this request are
+        // remembered, and the existing-item lookup is done for the whole batch
+        // in one query instead of once per file.
+        $totalDelta = 0;
+        $knownFolders = [];
+
+        $targets = [];
 
         foreach ($files as $index => $uploadedFile) {
             if (!$uploadedFile instanceof UploadedFile) {
@@ -306,16 +349,31 @@ class DirectoryController extends Controller
 
             $rawPath = $paths[$index] ?? $uploadedFile->getClientOriginalName();
             $relativePath = $this->normalizePath($rawPath, false, $currentPath === '');
-            $targetPath = $this->joinPaths($currentPath, $relativePath);
-            $parentPath = DirectoryItem::parentPathFor($targetPath);
+            $targets[] = [
+                'file' => $uploadedFile,
+                'path' => $this->joinPaths($currentPath, $relativePath),
+            ];
+        }
+
+        $existing = $this->findItems($directory, array_column($targets, 'path'));
+
+        foreach ($targets as $target) {
+            $parentPath = DirectoryItem::parentPathFor($target['path']);
 
             if ($parentPath !== '') {
-                $this->ensureFolderPath($directory, $parentPath);
+                $this->ensureFolderPath($directory, $parentPath, $knownFolders);
             }
 
-            $this->storeFileItem($directory, $targetPath, $uploadedFile);
+            $totalDelta += $this->storeFileItem(
+                $directory,
+                $target['path'],
+                $target['file'],
+                $existing[$target['path']] ?? null
+            );
             $uploadedCount++;
         }
+
+        $this->applySizeDelta($directory, $totalDelta);
 
         if ($uploadedCount === 0) {
             throw ValidationException::withMessages([
@@ -326,10 +384,17 @@ class DirectoryController extends Controller
         return $uploadedCount;
     }
 
-    private function storeFileItem(Directory $directory, string $path, UploadedFile $uploadedFile): void
+    /**
+     * Persist one uploaded file, returning the size delta for the caller to
+     * apply (batched across a multi-file upload rather than per file).
+     */
+    private function storeFileItem(
+        Directory $directory,
+        string $path,
+        UploadedFile $uploadedFile,
+        ?DirectoryItem $existing
+    ): int
     {
-        $existing = $this->findItem($directory, $path);
-
         if ($existing && $existing->isFolder()) {
             throw ValidationException::withMessages([
                 'paths' => "A folder already exists at $path.",
@@ -365,10 +430,14 @@ class DirectoryController extends Controller
             ]);
         }
 
-        $this->applySizeDelta($directory, $delta);
+        return $delta;
     }
 
-    private function ensureFolderPath(Directory $directory, string $path): void
+    /**
+     * @param array<string,bool> $knownFolders Folders already ensured during this
+     *   request, so a deep tree is not re-queried once per uploaded file.
+     */
+    private function ensureFolderPath(Directory $directory, string $path, array &$knownFolders = []): void
     {
         if ($path === '') {
             return;
@@ -379,6 +448,11 @@ class DirectoryController extends Controller
 
         foreach ($segments as $segment) {
             $folderPath = $this->joinPaths($folderPath, $segment);
+
+            if (isset($knownFolders[$folderPath])) {
+                continue;
+            }
+
             $existing = $this->findItem($directory, $folderPath);
 
             if ($existing && $existing->isFile()) {
@@ -396,6 +470,8 @@ class DirectoryController extends Controller
                     'size' => 0,
                 ]);
             }
+
+            $knownFolders[$folderPath] = true;
         }
     }
 
@@ -422,6 +498,7 @@ class DirectoryController extends Controller
         foreach ($items as $candidate) {
             if ($candidate->isFile() && $candidate->storage_path) {
                 Storage::disk('local')->delete($candidate->storage_path);
+                Thumbnailer::delete('d-' . $candidate->id);
             }
         }
 
@@ -441,20 +518,46 @@ class DirectoryController extends Controller
             abort(404);
         }
 
+        // A server-generated derivative, safe to send inline and far smaller
+        // than the original for listing views.
+        if ($request->boolean('thumb') && Thumbnailer::supports($item->mime)) {
+            $key = 'd-' . $item->id;
+
+            if (Thumbnailer::exists($key) || Thumbnailer::generate($path, $key, $item->mime)) {
+                return response()->file(Thumbnailer::absolutePathFor($key), [
+                    'X-Content-Type-Options' => 'nosniff',
+                    'Cache-Control' => 'private, max-age=31536000, immutable',
+                ]);
+            }
+        }
+
         if ($request->boolean('preview') && $this->isPreviewableMedia($item)) {
             return response()->file($path, [
                 'Content-Type' => $item->mime ?: 'application/octet-stream',
+                'X-Content-Type-Options' => 'nosniff',
             ]);
         }
 
         return response()->download($path, $item->name, [
             'Content-Type' => $item->mime ?: 'application/octet-stream',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
+    /**
+     * Media that is safe to render inline.
+     *
+     * SVG is deliberately excluded: it matches the image/ prefix but is a
+     * scriptable document, so previewing one inline executed attacker-supplied
+     * script on this origin.
+     */
     private function isPreviewableMedia(DirectoryItem $item): bool
     {
-        $mime = $item->mime ?? '';
+        $mime = strtolower($item->mime ?? '');
+
+        if (str_contains($mime, 'svg')) {
+            return false;
+        }
 
         return str_starts_with($mime, 'image/')
             || str_starts_with($mime, 'audio/')
@@ -468,6 +571,38 @@ class DirectoryController extends Controller
                 $query->whereNull('expires')->orWhere('expires', '>', now());
             })
             ->firstOrFail();
+    }
+
+    /**
+     * Resolve many paths at once, keyed by path.
+     *
+     * @param string[] $paths
+     * @return array<string, DirectoryItem>
+     */
+    private function findItems(Directory $directory, array $paths): array
+    {
+        $paths = array_values(array_unique($paths));
+
+        if ($paths === []) {
+            return [];
+        }
+
+        $hashes = array_map(fn (string $path) => DirectoryItem::pathHash($path), $paths);
+        $wanted = array_flip($paths);
+        $found = [];
+
+        // Chunked so a very large upload cannot build an oversized IN clause.
+        foreach (array_chunk($hashes, 500) as $chunk) {
+            foreach ($directory->items()->whereIn('path_hash', $chunk)->get() as $item) {
+                // Re-compare the full path: the hash narrows the search, it does
+                // not by itself prove a match.
+                if (isset($wanted[$item->path])) {
+                    $found[$item->path] = $item;
+                }
+            }
+        }
+
+        return $found;
     }
 
     private function findItem(Directory $directory, string $path): ?DirectoryItem
@@ -525,13 +660,7 @@ class DirectoryController extends Controller
 
     private function resolveUser(Request $request): ?User
     {
-        $token = $request->bearerToken() ?: $request->header('Authorization');
-
-        if ($token && str_starts_with($token, 'Bearer ')) {
-            $token = substr($token, 7);
-        }
-
-        return $request->user() ?? ($token ? User::firstWhere('api_token', $token) : null);
+        return $this->resolveApiUser($request);
     }
 
     private function ownsDirectory(Request $request, Directory $directory): bool
@@ -565,27 +694,48 @@ class DirectoryController extends Controller
         return response()->json(['error' => 'Unauthorized'], 401);
     }
 
+    /**
+     * Apply a size change to the directory and its owner.
+     *
+     * This used to read-modify-write both rows, which lost updates when two
+     * uploads overlapped. Atomic increments keep concurrent uploads correct;
+     * the clamp to zero is handled by a follow-up only when it would go
+     * negative, which the nightly recalculation also repairs.
+     */
     private function applySizeDelta(Directory $directory, int $delta): void
     {
         if ($delta === 0) {
             return;
         }
 
-        $directory->refresh();
-        $directory->size = max(0, $directory->size + $delta);
-        $directory->save();
+        $this->adjustColumn(Directory::whereKey($directory->getKey()), 'size', $delta);
+        $directory->size = max(0, (int) $directory->size + $delta);
 
         if (!$directory->user_id) {
             return;
         }
 
-        /** @var User|null $user */
-        $user = User::find($directory->user_id);
+        $this->adjustColumn(User::whereKey($directory->user_id), 'storage_used', $delta);
+    }
 
-        if ($user) {
-            $user->storage_used = max(0, $user->storage_used + $delta);
-            $user->save();
+    /**
+     * Atomically add $delta to an unsigned counter without letting it underflow.
+     *
+     * A plain increment() with a negative amount would drive these unsigned
+     * columns below zero, which MariaDB rejects outright.
+     */
+    private function adjustColumn($query, string $column, int $delta): void
+    {
+        if ($delta >= 0) {
+            $query->increment($column, $delta);
+
+            return;
         }
+
+        $amount = abs($delta);
+
+        (clone $query)->where($column, '>=', $amount)->decrement($column, $amount);
+        (clone $query)->where($column, '<', $amount)->update([$column => 0]);
     }
 
     private function normalizePath(?string $path, bool $allowRoot = true, bool $rejectReservedRoot = true): string

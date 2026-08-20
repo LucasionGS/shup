@@ -46,6 +46,41 @@ class UploadLink extends Model implements Expireable
         $this->save();
     }
 
+    /**
+     * Atomically claim this one-time link.
+     *
+     * The conditional update means only one of several concurrent requests can
+     * flip `used` from false to true, so a burst against the same link can no
+     * longer land more than one upload.
+     */
+    public function claim(): bool
+    {
+        if ($this->expires && $this->expires->isPast()) {
+            return false;
+        }
+
+        $claimed = static::whereKey($this->getKey())
+            ->where('used', false)
+            ->update(['used' => true]);
+
+        if ($claimed === 0) {
+            return false;
+        }
+
+        $this->used = true;
+
+        return true;
+    }
+
+    /**
+     * Hand the link back when the upload it was claimed for was rejected.
+     */
+    public function release(): void
+    {
+        static::whereKey($this->getKey())->update(['used' => false]);
+        $this->used = false;
+    }
+
     public function expire(): void
     {
         $this->delete();

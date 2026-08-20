@@ -329,15 +329,18 @@ select:disabled {
     min-height: 2rem;
 }
 
+/* Button classes are excluded here the same way .app-panel already does it:
+   an anchor styled as a button must keep the button's own text colour, or it
+   is painted accent-on-accent and becomes unreadable. */
 .app-link,
 .app-panel a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-ghost),
-.public-card a {
+.public-card a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-ghost) {
     color: var(--accent);
 }
 
 .app-link:hover,
 .app-panel a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-ghost):hover,
-.public-card a:hover {
+.public-card a:not(.btn-primary):not(.btn-secondary):not(.btn-danger):not(.btn-ghost):hover {
     color: var(--accent-strong);
 }
 
@@ -841,4 +844,25 @@ div.user-profile-menu--item {
 
 hr {
     border-color: var(--stroke);
+}
+/* File preview page */
+.file-preview-stage {
+    @apply flex items-center justify-center overflow-hidden rounded-lg;
+    background: rgba(0, 0, 0, 0.25);
+    min-height: 12rem;
+    padding: 0.75rem;
+}
+
+.file-preview-media {
+    @apply max-h-[60vh] w-auto max-w-full rounded-md object-contain;
+}
+
+.file-preview-frame {
+    @apply w-full rounded-md border-0;
+    height: 70vh;
+}
+
+.file-preview-text {
+    @apply w-full overflow-auto text-left;
+    max-height: 60vh;
 }

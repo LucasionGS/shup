@@ -79,14 +79,23 @@
                     <label for="file_password" class="field-label">Password</label>
                     <input type="password" name="password" id="file_password" autocomplete="new-password" placeholder="Optional">
                 </div>
+                <div>
+                    <label for="file_max_downloads" class="field-label">Download limit</label>
+                    <input type="number" name="max_downloads" id="file_max_downloads" min="1" step="1" placeholder="Unlimited">
+                </div>
             </div>
+            @php
+                // Read from ini_get() directly rather than gating on
+                // php_ini_loaded_file(): a container that configures PHP purely
+                // through conf.d has no main php.ini, so the old check reported
+                // "Unknown" even though the limits were set.
+                $uploadMax = \App\Models\File::expandPHPFileSize((string) ini_get('upload_max_filesize'));
+                $postMax = \App\Models\File::expandPHPFileSize((string) ini_get('post_max_size'));
+                $limits = array_filter([$uploadMax, $postMax], fn ($value) => $value > 0);
+            @endphp
             <p class="helper-text">
-                Max upload size: {{ php_ini_loaded_file() ? \App\Models\File::reduceFileSize(
-                    min(
-                        \App\Models\File::expandPHPFileSize(ini_get('upload_max_filesize')),
-                        \App\Models\File::expandPHPFileSize(ini_get('post_max_size'))
-                    )
-            ) : "Unknown" }}
+                Max upload size: {{ $limits ? \App\Models\File::reduceFileSize(min($limits)) : 'Unknown' }}
+                &middot; larger files upload in resumable chunks
             </p>
         </form>
 
@@ -195,7 +204,9 @@
                                 <tr>
                                     <td class="w-40">
                                         @if(str_starts_with($file->mime, "image/"))
-                                            <img src='{{"/f/$file->short_code"}}' class="file-preview block w-32 max-h-32 object-scale-down">
+                                            {{-- ?thumb=1 serves a small server-side derivative; pointing at
+                                                 the original made a listing download every full-size image. --}}
+                                            <img src='{{"/f/$file->short_code?thumb=1"}}' class="file-preview block w-32 max-h-32 object-scale-down" loading="lazy" decoding="async">
                                         @elseif(str_starts_with($file->mime, "audio/"))
                                             <audio src='{{"/f/$file->short_code"}}' class="file-preview block w-40" controls></audio>
                                         @else
@@ -205,7 +216,9 @@
                                     <td>{{ $file->original_name }}</td>
                                     <td>{{ $file->ext }}</td>
                                     <td>{{ $file->mime }}</td>
-                                    <td class="text-center">{{ $file->downloads }}</td>
+                                    <td class="text-center">
+                                        {{ $file->downloads }}@if ($file->max_downloads)<span class="muted-text"> / {{ $file->max_downloads }}</span>@endif
+                                    </td>
                                     <td class="text-center">
                                         @if($file->expires)
                                             <span class="status-pill status-pill--danger">{{ Carbon\Carbon::parse($file->expires)->diffForHumans() }}</span>
@@ -230,6 +243,7 @@
                                                     <button type="submit" class="btn-secondary btn-small">Set Profile</button>
                                                 </form>
                                             @endif
+                                            <a href="{{ url("f/$file->short_code") }}?view=1" class="btn-secondary btn-small">Preview</a>
                                             <a href="{{ url("f/$file->short_code") }}" class="btn-secondary btn-small">Download</a>
                                             <form action="{{ url("f/$file->short_code?force=1&_back=1") }}" method="POST"
                                                 onsubmit="return confirm('Are you sure you want to delete this file? This action cannot be undone.');"

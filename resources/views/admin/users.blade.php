@@ -3,7 +3,13 @@
 @section('content')
 
 @php
-    $users = \App\Models\User::all();
+    // Paged rather than User::all(): an open-registration instance can
+    // accumulate more accounts than one page should ever load.
+    $userQuery = \App\Models\User::orderBy('id');
+    $count = $userQuery->count();
+    $pageSize = 25;
+    $page = max(0, (int) request()->query("page", 0));
+    $users = $userQuery->limit($pageSize)->offset($page * $pageSize)->get();
 @endphp
 
 <div class="app-panel">
@@ -143,5 +149,17 @@
             </tbody>
         </table>
     </div>
+
+    @if($count > $pageSize)
+        <div class="flex items-center justify-center gap-3 mt-4">
+            @if($page > 0)
+                <a href="{{ request()->fullUrlWithQuery(['page' => $page - 1]) }}" class="btn-secondary btn-small">Previous</a>
+            @endif
+            <span class="muted-text text-sm">Page {{ $page + 1 }}</span>
+            @if($count > ($page + 1) * $pageSize)
+                <a href="{{ request()->fullUrlWithQuery(['page' => $page + 1]) }}" class="btn-secondary btn-small">Next</a>
+            @endif
+        </div>
+    @endif
 </div>
 @endsection

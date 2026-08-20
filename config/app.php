@@ -56,6 +56,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS URL Generation
+    |--------------------------------------------------------------------------
+    |
+    | TLS normally terminates at a reverse proxy in front of the app, so the
+    | application itself speaks plain HTTP and would otherwise generate http://
+    | share links. This forces generated URLs back to https in production. Set
+    | APP_FORCE_HTTPS=false when serving over plain HTTP on purpose.
+    |
+    */
+
+    'force_https' => (bool) env('APP_FORCE_HTTPS', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

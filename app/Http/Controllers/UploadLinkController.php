@@ -7,6 +7,7 @@ use App\Models\DirectoryItem;
 use App\Models\File;
 use App\Models\UploadLink;
 use App\Models\User;
+use App\Support\PasswordCrypto;
 use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -92,23 +93,53 @@ class UploadLinkController extends Controller
             return response()->json(['error' => 'Upload link is invalid or has been used.'], 400);
         }
 
+        $maxKilobytes = $this->maxUploadKilobytes();
+
         if ($link->multi_file) {
             $request->validate([
                 'files' => 'required|array|min:1',
-                'files.*' => 'file',
+                'files.*' => ['file', "max:$maxKilobytes"],
                 'password' => 'nullable|string',
             ]);
         } else {
             $request->validate([
-                'file' => 'required|file',
+                'file' => ['required', 'file', "max:$maxKilobytes"],
                 'password' => 'nullable|string',
             ]);
+        }
+
+        // Claim the one-time link before writing anything. markUsed() used to run
+        // after the upload, so concurrent requests could each pass isValid() and
+        // land a separate upload on a single-use link.
+        if (!$link->claim()) {
+            if ($request->query("_back")) {
+                return back()->withErrors(['error' => 'Upload link is invalid or has been used.']);
+            }
+
+            return response()->json(['error' => 'Upload link is invalid or has been used.'], 400);
         }
 
         /** @var User */
         $owner = $link->user;
 
         $password = $request->input('password') ?? $request->input("pwd") ?? null;
+
+        // A leaked link would otherwise be an unbounded write into the owner's
+        // account: the uploaded bytes are charged to them, not the uploader.
+        $incoming = collect($request->allFiles())
+            ->flatten()
+            ->filter(fn ($f) => $f instanceof UploadedFile)
+            ->sum(fn (UploadedFile $f) => $f->getSize() ?? 0);
+
+        if ($owner && !$owner->canStore((int) $incoming)) {
+            $link->release();
+
+            if ($request->query("_back")) {
+                return back()->withErrors(['error' => 'This upload would exceed the storage quota.']);
+            }
+
+            return response()->json(['error' => 'Storage quota exceeded.'], 413);
+        }
 
         if ($link->multi_file) {
             $files = $request->file('files', []);
@@ -122,8 +153,6 @@ class UploadLinkController extends Controller
             // Multiple files become a directory; a single file stays a regular file
             if (count($files) > 1) {
                 $url = $this->storeAsDirectory($files, $owner, $password);
-
-                $link->markUsed();
 
                 if ($request->query("_back")) {
                     return back()->with("file_url", $url);
@@ -142,18 +171,18 @@ class UploadLinkController extends Controller
 
         $fileName = $file->getClientOriginalName();
         $ext = $file->guessExtension();
-        $fileShortCode = $this->generateShortcode();
+
+        do {
+            $fileShortCode = $this->generateShortcode();
+        } while (File::where('short_code', $fileShortCode)->exists());
 
         $file->storeAs("files", $password ? "__$fileShortCode" : $fileShortCode);
 
-        $path = "app/private/files";
-        $path = storage_path($path);
+        $path = File::storageDirectory();
 
         // ENCRYPTION
         if ($password) {
-            $fileContent = file_get_contents("$path/__$fileShortCode");
-            $encrypted = $this->encryptData($fileContent, $password);
-            file_put_contents("$path/$fileShortCode", $encrypted);
+            PasswordCrypto::encryptFile("$path/__$fileShortCode", "$path/$fileShortCode", $password);
             unlink("$path/__$fileShortCode");
         }
         // /ENCRYPTION
@@ -172,9 +201,6 @@ class UploadLinkController extends Controller
         ]);
 
         $owner->increment('storage_used', $filesize);
-
-        // Mark link as used
-        $link->markUsed();
 
         $url = url("/f/$fileShortCode");
 

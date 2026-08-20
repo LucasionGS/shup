@@ -9,6 +9,9 @@
 .env
 .env.backup
 .env.production
+# Holds the production database and application secrets for the Docker stack.
+# .env.docker.example is the template that is meant to be committed.
+.env.docker
 .phpactor.json
 .phpunit.result.cache
 Homestead.json

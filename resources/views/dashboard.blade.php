@@ -22,7 +22,11 @@
             <h1 class="panel-title">Your Dashboard</h1>
             <p class="panel-subtitle">Welcome back, {{ $user->name }}. Your files, links, and snippets are ready when you are.</p>
         </div>
-        <a href="{{ route('resetapi') }}" class="btn-secondary">Reset API Key</a>
+        <form action="{{ route('resetapi') }}" method="POST" class="inline"
+            onsubmit="return confirm('Reset your API key? Existing integrations will stop working.');">
+            @csrf
+            <button type="submit" class="btn-secondary">Reset API Key</button>
+        </form>
     </div>
 
     <div class="surface-card mb-6">
