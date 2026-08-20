@@ -12,11 +12,13 @@ class UploadLink extends Model implements Expireable
         'short_code',
         'user_id',
         'used',
+        'multi_file',
         'expires',
     ];
 
     protected $casts = [
         'used' => 'boolean',
+        'multi_file' => 'boolean',
         'expires' => 'datetime',
     ];
 

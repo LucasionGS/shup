@@ -24,18 +24,31 @@
         <div class="flex flex-col md:flex-row gap-4">
             <div class="flex-1">
                 <label for="expires" class="field-label">Expiration (minutes, optional)</label>
-                <input 
-                    type="number" 
-                    name="expires" 
+                <input
+                    type="number"
+                    name="expires"
                     id="expires"
                     min="0"
                     placeholder="Leave empty for no expiration"
                 >
                 <p class="helper-text">Link will expire after this many minutes or after one upload.</p>
             </div>
+            <div class="flex-1">
+                <label for="multi_file" class="field-label">Multiple files</label>
+                <label class="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        name="multi_file"
+                        id="multi_file"
+                        value="1"
+                    >
+                    <span class="text-sm">Allow multiple files</span>
+                </label>
+                <p class="helper-text">Uploading more than one file will create a directory.</p>
+            </div>
             <div class="flex items-end">
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     class="btn-primary w-full md:w-auto"
                 >
                     Generate Link
@@ -84,6 +97,7 @@
                 <thead>
                     <tr>
                         <th>Link</th>
+                        <th>Type</th>
                         <th>Status</th>
                         <th>Created</th>
                         <th>Expires</th>
@@ -108,6 +122,9 @@
                                         </button>
                                     @endif
                                 </div>
+                            </td>
+                            <td class="text-sm">
+                                {{ $link->multi_file ? 'Multi-file' : 'Single file' }}
                             </td>
                             <td>
                                 @if($link->used)

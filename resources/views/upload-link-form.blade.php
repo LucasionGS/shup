@@ -11,12 +11,12 @@
     <main class="public-shell">
         <div class="public-card">
                 @include('partials.app-mark')
-                <h1 class="text-2xl font-semibold mb-2 text-center">Upload Your File</h1>
-                <p class="panel-subtitle mb-6 text-center">Send a file securely through this one-time Shup upload link.</p>
-                
+                <h1 class="text-2xl font-semibold mb-2 text-center">Upload Your {{ $link->multi_file ? 'Files' : 'File' }}</h1>
+                <p class="panel-subtitle mb-6 text-center">Send {{ $link->multi_file ? 'files' : 'a file' }} securely through this one-time Shup upload link.</p>
+
                 @if(session('file_url'))
                     <div class="alert-success mb-4">
-                        <p class="font-semibold mb-2">File uploaded successfully!</p>
+                        <p class="font-semibold mb-2">Upload successful!</p>
                         <div class="flex items-center gap-2">
                             <input 
                                 type="text" 
@@ -59,28 +59,41 @@
                         @csrf
                         
                         <div>
-                            <label for="file" class="field-label">Select File</label>
-                            <input 
-                                type="file" 
-                                name="file" 
-                                id="file" 
+                            <label for="file" class="field-label">Select {{ $link->multi_file ? 'Files' : 'File' }}</label>
+                            <input
+                                type="file"
+                                name="{{ $link->multi_file ? 'files[]' : 'file' }}"
+                                id="file"
+                                @if($link->multi_file) multiple @endif
                                 required
                             >
+                            @if($link->multi_file)
+                                <p class="helper-text">
+                                    Uploading more than one file will share them as a directory.
+                                </p>
+                            @endif
                             @error('file')
+                                <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
+                            @enderror
+                            @error('files')
                                 <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <div>
                             <label for="password" class="field-label">Password (optional)</label>
-                            <input 
-                                type="password" 
-                                name="password" 
+                            <input
+                                type="password"
+                                name="password"
                                 id="password"
                                 placeholder="Leave empty for no password"
                             >
                             <p class="helper-text">
-                                If set, the file will be encrypted and require this password to access.
+                                @if($link->multi_file)
+                                    If set, this password will be required to access the upload.
+                                @else
+                                    If set, the file will be encrypted and require this password to access.
+                                @endif
                             </p>
                             @error('password')
                                 <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
@@ -93,12 +106,12 @@
                             </div>
                         @endif
 
-                        <button 
+                        <button
                             type="submit"
                             id="submit-btn"
                             class="btn-primary w-full"
                         >
-                            Upload File
+                            Upload {{ $link->multi_file ? 'Files' : 'File' }}
                         </button>
                     </form>
 
@@ -113,7 +126,8 @@
                             const progressPercent = document.getElementById('progress-percent');
                             const progressStatus = document.getElementById('progress-status');
                             const submitBtn = document.getElementById('submit-btn');
-                            
+                            const submitLabel = submitBtn.textContent.trim();
+
                             // Show progress bar and disable submit button
                             progressContainer.classList.remove('hidden');
                             submitBtn.disabled = true;
@@ -150,7 +164,7 @@
                                     progressStatus.textContent = 'Upload failed. Please try again.';
                                     progressBar.classList.add('bg-red-600');
                                     submitBtn.disabled = false;
-                                    submitBtn.textContent = 'Upload File';
+                                    submitBtn.textContent = submitLabel;
                                 }
                             });
                             
@@ -158,7 +172,7 @@
                                 progressStatus.textContent = 'Network error. Please try again.';
                                 progressBar.classList.add('bg-red-600');
                                 submitBtn.disabled = false;
-                                submitBtn.textContent = 'Upload File';
+                                submitBtn.textContent = submitLabel;
                             });
                             
                             xhr.open('POST', form.action);
@@ -184,7 +198,7 @@
 
                     <div class="alert-info mt-4">
                         <p class="text-sm">
-                            <span class="font-semibold">One-time use:</span> This link will expire after uploading one file.
+                            <span class="font-semibold">One-time use:</span> This link will expire after {{ $link->multi_file ? 'one upload' : 'uploading one file' }}.
                         </p>
                     </div>
                 @endif
