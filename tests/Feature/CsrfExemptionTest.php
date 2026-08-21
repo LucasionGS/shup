@@ -2,8 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\ValidateCsrfToken;
+use App\Http\Middleware\PreventRequestForgery;
 use App\Models\User;
+use Illuminate\Foundation\Configuration\Middleware as MiddlewareConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Tests\TestCase;
@@ -19,7 +20,7 @@ class CsrfExemptionTest extends TestCase
 
     private function shouldSkipCsrf(Request $request): bool
     {
-        $middleware = new ValidateCsrfToken(app(), app('encrypter'));
+        $middleware = new PreventRequestForgery(app(), app('encrypter'));
 
         $method = new \ReflectionMethod($middleware, 'inExceptArray');
         $method->setAccessible(true);
@@ -36,9 +37,32 @@ class CsrfExemptionTest extends TestCase
         $web = $property->getValue($kernel)['web'] ?? [];
 
         $this->assertContains(
-            ValidateCsrfToken::class,
+            PreventRequestForgery::class,
             $web,
-            'The conditional CSRF middleware must actually be registered; the framework class it replaces is named ValidateCsrfToken in Laravel 11.'
+            'The conditional CSRF middleware must actually be registered. bootstrap/app.php swaps it in with replaceInGroup(), which matches an exact class string and does nothing at all when it misses.'
+        );
+
+        $this->assertNotContains(
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+            $web,
+            'The stock CSRF middleware is still in the web group, so the swap did not happen and every CLI and ShareX upload will fail with a token mismatch.'
+        );
+    }
+
+    public function test_the_framework_class_we_replace_still_has_that_name(): void
+    {
+        // replaceInGroup() searches the default web group for one exact class
+        // string. The framework has renamed this middleware twice already
+        // (VerifyCsrfToken -> ValidateCsrfToken in 11, -> PreventRequestForgery
+        // in 13) and both times the search would have silently found nothing.
+        // Asserting against the framework's own defaults catches the next
+        // rename at upgrade time rather than in production.
+        $default = (new MiddlewareConfig)->getMiddlewareGroups()['web'];
+
+        $this->assertContains(
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+            $default,
+            'The framework renamed its CSRF middleware again. Update the search argument in bootstrap/app.php and the parent of App\Http\Middleware\PreventRequestForgery to match.'
         );
     }
 

@@ -2,7 +2,7 @@
 
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\SecurityHeaders;
-use App\Http\Middleware\ValidateCsrfToken;
+use App\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,10 +18,17 @@ return Application::configure(basePath: dirname(__DIR__))
         // requests are not. See the middleware for why.
         // replaceInGroup, not replace: CSRF lives in the web group, and
         // replace() only rewrites the global middleware stack.
+        // The search argument must track the framework's current class name --
+        // it is an exact string match that no-ops silently on a miss, which
+        // would leave the stock CSRF middleware in place and 419 every CLI and
+        // ShareX upload. CsrfExemptionTest fails if that ever happens.
+        // Not preventRequestForgery(except:), which routes through the static
+        // $neverVerify list and exempts those paths unconditionally -- that is
+        // the blanket exemption this middleware exists to replace.
         $middleware->replaceInGroup(
             'web',
-            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
-            ValidateCsrfToken::class
+            \Illuminate\Foundation\Http\Middleware\PreventRequestForgery::class,
+            PreventRequestForgery::class
         );
 
         $middleware->append(SecurityHeaders::class);

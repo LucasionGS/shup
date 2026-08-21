@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken as Middleware;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery as Middleware;
 
 /**
  * The upload endpoints are shared by two very different clients: the CLI and
@@ -16,8 +16,16 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken as Middleware;
  *
  * The exemption now applies only to requests that actually present an API
  * token. Session-authenticated requests keep full CSRF protection.
+ *
+ * This class is named after the framework middleware it stands in for, because
+ * bootstrap/app.php swaps it into the web group by matching that exact class
+ * string. The framework has renamed this middleware twice -- VerifyCsrfToken
+ * to ValidateCsrfToken in 11, ValidateCsrfToken to PreventRequestForgery in
+ * 13 -- and each rename makes the swap silently match nothing, which
+ * unregisters this class and breaks every CLI and ShareX upload with no error
+ * at boot. CsrfExemptionTest is the guard; keep the names in step.
  */
-class ValidateCsrfToken extends Middleware
+class PreventRequestForgery extends Middleware
 {
     /**
      * Endpoints token-based clients need to reach.

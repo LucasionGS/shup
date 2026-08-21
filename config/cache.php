@@ -105,4 +105,19 @@ return [
 
     'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_cache_'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Serializable Cache Classes
+    |--------------------------------------------------------------------------
+    |
+    | Which PHP classes may be unserialized out of the cache. Nothing here
+    | caches an object -- Configuration::cachedMap() stores a key => value
+    | array of strings and UpdateChecker stores an array of scalars -- so the
+    | allow-list is empty, and a leaked APP_KEY cannot be turned into a
+    | deserialization gadget chain through the cache.
+    |
+    */
+
+    'serializable_classes' => false,
+
 ];

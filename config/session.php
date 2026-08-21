@@ -22,6 +22,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Session Serialization
+    |--------------------------------------------------------------------------
+    |
+    | How session payloads are encoded at rest. "json" cannot be coerced into
+    | instantiating arbitrary classes the way PHP's native serializer can, so
+    | a leaked APP_KEY cannot be escalated through the session store. Nothing
+    | here puts an object in the session, so the restriction costs nothing.
+    |
+    | Set explicitly rather than left to the framework default, which changed
+    | in Laravel 13. Note that sessions written under the old encoding are
+    | unreadable after this changes, so every logged-in user is signed out
+    | once when it ships -- and again if this commit is ever reverted.
+    |
+    */
+
+    'serialization' => 'json',
+
+    /*
+    |--------------------------------------------------------------------------
     | Session Lifetime
     |--------------------------------------------------------------------------
     |
