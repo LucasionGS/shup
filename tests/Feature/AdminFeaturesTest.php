@@ -137,4 +137,39 @@ class AdminFeaturesTest extends TestCase
         $this->actingAs($user)->delete("/user/{$victim->id}")->assertRedirect();
         $this->assertDatabaseHas('users', ['id' => $victim->id]);
     }
+
+    public function test_dashboard_flags_records_whose_file_is_gone(): void
+    {
+        $admin = $this->admin();
+
+        $response = $this->actingAs($admin)->post('/f', [
+            'file' => UploadedFile::fake()->create('vanishing.bin', 4),
+        ]);
+        $response->assertCreated();
+        $code = $response->json('short_code');
+
+        // Remove the blob but keep the record, as an incomplete storage copy
+        // during a migration would.
+        Storage::disk('local')->delete("files/$code");
+
+        $this->actingAs($admin)
+            ->get('/admin')
+            ->assertOk()
+            ->assertSee('point at a file that is not on disk')
+            ->assertSee($code);
+    }
+
+    public function test_dashboard_is_quiet_when_storage_and_database_agree(): void
+    {
+        $admin = $this->admin();
+
+        $this->actingAs($admin)->post('/f', [
+            'file' => UploadedFile::fake()->create('intact.bin', 4),
+        ])->assertCreated();
+
+        $this->actingAs($admin)
+            ->get('/admin')
+            ->assertOk()
+            ->assertDontSee('point at a file that is not on disk');
+    }
 }

@@ -26,6 +26,7 @@ class AdminController extends Controller
             'topUsers' => $this->topUsersByStorage(),
             'popularFiles' => $this->popularFiles(),
             'orphans' => $this->findOrphans(),
+            'missing' => $this->findMissingBlobs(),
         ]);
     }
 
@@ -106,6 +107,44 @@ class AdminController extends Controller
             'files' => $strayFiles,
             'directory_files' => $strayDirectoryFiles,
             'bytes' => $strayBytes,
+        ];
+    }
+
+    /**
+     * The inverse of an orphan: a record whose file is gone.
+     *
+     * These are worse than orphans, because the share link still resolves to a
+     * record and then fails. Most often it means storage was not fully copied
+     * during a migration, or a blob was removed by hand.
+     */
+    private function findMissingBlobs(): array
+    {
+        $codes = [];
+
+        File::orderBy('id')->chunkById(500, function ($files) use (&$codes) {
+            foreach ($files as $file) {
+                if (!is_file($file->absolutePath())) {
+                    $codes[] = $file->short_code;
+                }
+            }
+        });
+
+        $items = 0;
+        $disk = Storage::disk('local');
+
+        DirectoryItem::whereNotNull('storage_path')
+            ->orderBy('id')
+            ->chunkById(500, function ($rows) use (&$items, $disk) {
+                foreach ($rows as $row) {
+                    if (!$disk->exists($row->storage_path)) {
+                        $items++;
+                    }
+                }
+            });
+
+        return [
+            'files' => $codes,
+            'directory_items' => $items,
         ];
     }
 

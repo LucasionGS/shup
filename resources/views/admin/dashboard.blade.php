@@ -169,7 +169,31 @@
             </div>
         </div>
 
-        @php $orphanCount = count($orphans['files']) + $orphans['directory_files']; @endphp
+        @php
+            $orphanCount = count($orphans['files']) + $orphans['directory_files'];
+            $missingCount = count($missing['files']) + $missing['directory_items'];
+        @endphp
+
+        @if($missingCount > 0)
+            <div class="alert-error mb-4" role="alert">
+                <div class="font-semibold">{{ $missingCount }} record(s) point at a file that is not on disk</div>
+                <p class="mt-2">
+                    These share links resolve to a record and then fail. This usually means storage
+                    was not fully copied during a migration, or a file was removed by hand.
+                </p>
+                @if($missing['files'])
+                    <p class="helper-text mt-2 break-all">
+                        {{ implode(', ', array_slice($missing['files'], 0, 12)) }}
+                        @if(count($missing['files']) > 12)
+                            and {{ count($missing['files']) - 12 }} more
+                        @endif
+                    </p>
+                @endif
+                @if($missing['directory_items'])
+                    <p class="helper-text mt-2">{{ $missing['directory_items'] }} directory item(s) also affected.</p>
+                @endif
+            </div>
+        @endif
 
         <div class="surface-card">
             @if($orphanCount === 0)

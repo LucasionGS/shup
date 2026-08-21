@@ -78,19 +78,48 @@ Artisan::command("shup:recalculate_physical_storage", function () {
     
     
     // \App\Models\File::class;
-    $files = \App\Models\File::all();
-    $file_count = $files->count();
-    for ($i = 0; $i < $file_count; $i++) {
-        $file = $files[$i];
-        $rI = $i + 1;
-        $this->comment("Processing file {$rI}/{$file_count}");
-        $file_path = "app/private/files/$file->short_code";
-        $file_path = storage_path($file_path);
-        $file_size = filesize($file_path);
+    // Chunked rather than all(), and tolerant of a row whose blob is gone:
+    // filesize() on a missing file raised an error that aborted the entire
+    // run, leaving every later item unprocessed.
+    $file_count = \App\Models\File::count();
+    $processed = 0;
+    $missing = [];
 
-        $file->size = $file_size;
-        $file->save();
-        $this->comment("File size updated to {$file_size} bytes");
+    \App\Models\File::orderBy('id')->chunkById(200, function ($files) use (&$processed, &$missing, $file_count) {
+        foreach ($files as $file) {
+            $processed++;
+            $file_path = $file->absolutePath();
+
+            clearstatcache(true, $file_path);
+
+            if (!is_file($file_path)) {
+                $missing[] = $file->short_code;
+                continue;
+            }
+
+            $file->size = filesize($file_path) ?: 0;
+            $file->save();
+        }
+
+        $this->comment("Processed {$processed}/{$file_count} files");
+    });
+
+    if ($missing !== []) {
+        $this->newLine();
+        $this->warn(count($missing) . ' file record(s) have no file on disk and were skipped:');
+
+        foreach (array_slice($missing, 0, 20) as $short_code) {
+            $this->line("  $short_code");
+        }
+
+        if (count($missing) > 20) {
+            $this->line('  ... and ' . (count($missing) - 20) . ' more');
+        }
+
+        $this->newLine();
+        $this->line('These share links will return 404. Either the blobs were lost, or');
+        $this->line('storage was not fully copied. Their sizes were left unchanged.');
+        $this->newLine();
     }
 
     // \App\Models\PasteBin::class;
